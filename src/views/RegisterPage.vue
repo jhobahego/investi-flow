@@ -21,15 +21,15 @@
       <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
         <div class="space-y-4">
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
               Nombre completo
             </label>
             <input
-              id="name"
-              name="name"
+              id="full_name"
+              name="full_name"
               type="text"
               required
-              v-model="form.name"
+              v-model="form.full_name"
               class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
               placeholder="Tu nombre completo"
             />
@@ -51,37 +51,60 @@
           </div>
           
           <div>
-            <label for="institution" class="block text-sm font-medium text-gray-700 mb-1">
-              Institución
+            <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">
+              Número de teléfono
             </label>
             <input
-              id="institution"
-              name="institution"
-              type="text"
+              id="phone_number"
+              name="phone_number"
+              type="tel"
               required
-              v-model="form.institution"
+              v-model="form.phone_number"
+              class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="+573001234567"
+            />
+          </div>
+          
+          <div>
+            <label for="university" class="block text-sm font-medium text-gray-700 mb-1">
+              Universidad (opcional)
+            </label>
+            <input
+              id="university"
+              name="university"
+              type="text"
+              v-model="form.university"
               class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
               placeholder="Universidad o institución"
             />
           </div>
           
           <div>
-            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
-              Rol
+            <label for="research_group" class="block text-sm font-medium text-gray-700 mb-1">
+              Semillero de investigación (opcional)
             </label>
-            <select
-              id="role"
-              name="role"
-              required
-              v-model="form.role"
-              class="relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-            >
-              <option value="">Selecciona tu rol</option>
-              <option value="student">Estudiante</option>
-              <option value="researcher">Investigador</option>
-              <option value="professor">Profesor</option>
-              <option value="other">Otro</option>
-            </select>
+            <input
+              id="research_group"
+              name="research_group"
+              type="text"
+              v-model="form.research_group"
+              class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="Nombre del semillero"
+            />
+          </div>
+          
+          <div>
+            <label for="career" class="block text-sm font-medium text-gray-700 mb-1">
+              Carrera (opcional)
+            </label>
+            <input
+              id="career"
+              name="career"
+              type="text"
+              v-model="form.career"
+              class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="Carrera universitaria"
+            />
           </div>
           
           <div>
@@ -169,10 +192,12 @@ const loading = ref(false)
 const error = ref('')
 
 const form = reactive({
-  name: '',
+  full_name: '',
   email: '',
-  institution: '',
-  role: '',
+  phone_number: '',
+  university: '',
+  research_group: '',
+  career: '',
   password: '',
   confirmPassword: '',
   acceptTerms: false
@@ -199,23 +224,24 @@ const handleRegister = async () => {
   loading.value = true
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API call
-    
-    const success = await authStore.register({
-      name: form.name,
+    await authStore.register({
       email: form.email,
-      institution: form.institution,
-      role: form.role,
-      password: form.password
+      full_name: form.full_name,
+      password: form.password,
+      phone_number: form.phone_number,
+      university: form.university || undefined,
+      research_group: form.research_group || undefined,
+      career: form.career || undefined
     })
     
-    if (success) {
-      router.push('/dashboard')
-    } else {
-      error.value = 'Error al crear la cuenta. Por favor, intenta nuevamente.'
-    }
+    // Redirigir al login tras registro exitoso
+    router.push({
+      name: 'Login',
+      query: { message: 'Registro exitoso. Ahora puedes iniciar sesión.' }
+    })
   } catch (err) {
-    error.value = 'Error al crear la cuenta. Por favor, intenta nuevamente.'
+    console.error('Registration error:', err)
+    error.value = 'Error al crear la cuenta. Por favor, verifica los datos e intenta nuevamente.'
   } finally {
     loading.value = false
   }

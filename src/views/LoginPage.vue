@@ -124,17 +124,14 @@ const handleLogin = async () => {
   error.value = ''
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-    
-    const success = await authStore.login(form.email, form.password)
-    
-    if (success) {
-      router.push('/dashboard')
-    } else {
-      error.value = 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.'
-    }
+    await authStore.login({
+      email: form.email,
+      password: form.password
+    })
+    // La redirección se maneja automáticamente en el store
   } catch (err) {
-    error.value = 'Error al iniciar sesión. Por favor, intenta nuevamente.'
+    console.error('Login error:', err)
+    error.value = 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.'
   } finally {
     loading.value = false
   }
