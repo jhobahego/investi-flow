@@ -131,7 +131,7 @@ const handleLogin = async () => {
     // La redirección se maneja automáticamente en el store
   } catch (err) {
     console.error('Login error:', err)
-    error.value = 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.'
+    error.value = err.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales e intenta nuevamente.'
   } finally {
     loading.value = false
   }

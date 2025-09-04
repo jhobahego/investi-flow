@@ -241,7 +241,7 @@ const handleRegister = async () => {
     })
   } catch (err) {
     console.error('Registration error:', err)
-    error.value = 'Error al crear la cuenta. Por favor, verifica los datos e intenta nuevamente.'
+    error.value = err.message || 'Error al registrar la cuenta. Por favor, verifica los datos e intenta nuevamente.'
   } finally {
     loading.value = false
   }

@@ -34,11 +34,24 @@ apiClient.interceptors.response.use(
         const message = err.msg.replace('Value error, ', '') // Limpiar prefijo
         return `${field}: ${message}`
       })
-      
+
       // Crear un nuevo error con mensaje procesado
       const processedError = new Error(errorMessages.join(', '))
+      processedError.name = 'ValidationError'
       return Promise.reject(processedError)
     }
+
+    // Para otros errores, asegurar que tengamos un Error object
+    if (!(error instanceof Error)) {
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        'Error desconocido'
+      const newError = new Error(errorMessage)
+      newError.name = 'APIError'
+      return Promise.reject(newError)
+    }
+
     return Promise.reject(error)
   }
 )
