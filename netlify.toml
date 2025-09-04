@@ -1,0 +1,33 @@
+# Configuración de Netlify para SPA (Single Page Application)
+
+[build]
+  # Directorio donde se generan los archivos de build
+  publish = "dist"
+  
+  # Comando para construir la aplicación
+  command = "npm run build"
+
+# Redirecciones para SPA - todas las rutas apuntan al index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Configuración adicional para mejorar el rendimiento
+[build.environment]
+  NODE_VERSION = "22"
+
+# Headers de seguridad opcionales
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache de assets estáticos
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
