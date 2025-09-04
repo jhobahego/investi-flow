@@ -50,8 +50,8 @@
           </div>
         </div>
         
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3">
-          <p class="text-sm text-red-700">{{ error }}</p>
+        <div v-if="authStore.errorMessage" class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-sm text-red-700">{{ authStore.errorMessage }}</p>
         </div>
 
         <div class="flex items-center justify-between">
@@ -77,10 +77,10 @@
         <div>
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="authStore.loading"
             class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
-            <span v-if="!loading">Iniciar Sesión</span>
+            <span v-if="!authStore.loading">Iniciar Sesión</span>
             <span v-else class="flex items-center">
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -96,15 +96,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
-
-const loading = ref(false)
-const error = ref('')
 
 const form = reactive({
   email: '',
@@ -112,20 +109,15 @@ const form = reactive({
 })
 
 const handleLogin = async () => {
-  loading.value = true
-  error.value = ''
+  authStore.clearError()
   
-  try {
-    await authStore.login({
-      email: form.email,
-      password: form.password
-    })
-    // La redirección se maneja automáticamente en el store
-  } catch (err) {
-    console.error('Login error:', err)
-    error.value = err.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales e intenta nuevamente.'
-  } finally {
-    loading.value = false
-  }
+  await authStore.login({
+    email: form.email,
+    password: form.password
+  })
 }
+
+onMounted(() => {
+  authStore.clearError()
+})
 </script>
