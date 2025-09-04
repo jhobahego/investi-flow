@@ -24,12 +24,12 @@
               @click="showUserMenu = !showUserMenu"
               class="flex items-center space-x-2 text-gray-700 hover:text-primary-600 focus:outline-none"
             >
-              <img 
-                :src="user.avatar" 
-                :alt="user.name"
-                class="w-8 h-8 rounded-full object-cover"
-              >
-              <span class="text-sm font-medium">{{ user.name }}</span>
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                <span class="text-white font-bold text-sm">
+                  {{ user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}
+                </span>
+              </div>
+              <span class="text-sm font-medium">{{ user?.full_name || 'Usuario' }}</span>
               <ChevronDownIcon class="w-4 h-4" />
             </button>
             
@@ -89,7 +89,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const handleLogout = () => {
   authStore.logout()
-  router.push('/')
+  showUserMenu.value = false
 }
 
 const handleClickOutside = (event) => {
