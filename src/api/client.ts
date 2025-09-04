@@ -22,4 +22,25 @@ apiClient.interceptors.request.use(
   }
 )
 
+// Interceptor para manejar errores de validación de FastAPI
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 422 && error.response.data?.detail) {
+      // Procesar errores de validación de FastAPI
+      const validationErrors = error.response.data.detail
+      const errorMessages = validationErrors.map((err: any) => {
+        const field = err.loc[err.loc.length - 1] // Último elemento de loc
+        const message = err.msg.replace('Value error, ', '') // Limpiar prefijo
+        return `${field}: ${message}`
+      })
+      
+      // Crear un nuevo error con mensaje procesado
+      const processedError = new Error(errorMessages.join(', '))
+      return Promise.reject(processedError)
+    }
+    return Promise.reject(error)
+  }
+)
+
 export default apiClient
