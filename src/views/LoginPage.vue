@@ -4,7 +4,7 @@
       <div>
         <div class="flex justify-center">
           <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-            <span class="text-white font-bold text-xl">IF</span>
+            <router-link to="/" class="text-white font-bold text-xl">IF</router-link>
           </div>
         </div>
         <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">
@@ -89,14 +89,6 @@
               Iniciando sesión...
             </span>
           </button>
-        </div>
-        
-        <div class="mt-6 border-t border-gray-200 pt-6">
-          <p class="text-xs text-gray-500 text-center">
-            Para probar la plataforma, puedes usar:<br>
-            <strong>juan.perez@universidad.edu</strong> - password123<br>
-            <strong>maria.garcia@instituto.org</strong> - password123
-          </p>
         </div>
       </form>
     </div>

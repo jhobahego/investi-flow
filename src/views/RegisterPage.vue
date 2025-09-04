@@ -4,7 +4,7 @@
       <div>
         <div class="flex justify-center">
           <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-            <span class="text-white font-bold text-xl">IF</span>
+            <router-link to="/" class="text-white font-bold text-xl">IF</router-link>
           </div>
         </div>
         <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">
