@@ -127,3 +127,20 @@ export interface ContentBlock {
   created_at: string
   ai_context?: string
 }
+
+// Types for API Error Handling
+interface ValidationErrorDetail {
+  input: string,
+  loc: string[];
+  msg: string;
+  type: string;
+}
+
+export interface ValidationErrorResponse {
+  detail: ValidationErrorDetail[];
+}
+
+export interface AuthorizationError {
+  detail: string;
+}
+
