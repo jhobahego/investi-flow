@@ -1,47 +1,98 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authenticateUser, getCurrentUser } from '../data/mockData'
-import type { User, RegisterFormData } from '../types'
+import { useRouter } from 'vue-router'
+import apiClient from '../api/client'
+import type { User, UserCreatePayload, TokenResponse, LoginFormData } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(getCurrentUser())
+  const user = ref<User | null>(null)
+  const token = ref<string | null>(localStorage.getItem('accessToken'))
+  const router = useRouter()
 
-  const isAuthenticated = computed(() => !!user.value)
+  const isAuthenticated = computed(() => !!token.value)
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const authenticatedUser = authenticateUser(email, password)
-    if (authenticatedUser) {
-      user.value = authenticatedUser
-      return true
+  function setAuthData(
+    userData: User | null,
+    accessToken: string | null
+  ) {
+    user.value = userData
+    token.value = accessToken
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken)
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+    } else {
+      localStorage.removeItem('accessToken')
+      delete apiClient.defaults.headers.common['Authorization']
     }
-    return false
   }
 
-  const logout = (): void => {
-    user.value = null
-    localStorage.removeItem('investiflow_user')
+  async function register(payload: UserCreatePayload) {
+    try {
+      await apiClient.post('/auth/register', payload)
+    } catch (error) {
+      console.error('Registration failed:', error)
+      throw error
+    }
   }
 
-  const register = async (userData: RegisterFormData): Promise<boolean> => {
-    // Simulate registration - in real app, this would call an API
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name,
-      email: userData.email,
-      institution: userData.institution,
-      role: userData.role as User['role'],
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'
+  async function login(credentials: LoginFormData) {
+    try {
+      const formData = new FormData()
+      formData.append('username', credentials.email)
+      formData.append('password', credentials.password)
+
+      const { data } = await apiClient.post<TokenResponse>(
+        '/auth/login',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+      setAuthData(null, data.access_token)
+      await fetchUser()
+      router.push({ name: 'Dashboard' })
+    } catch (error) {
+      console.error('Login failed:', error)
+      setAuthData(null, null)
+      throw error
     }
-    localStorage.setItem('investiflow_user', JSON.stringify(newUser))
-    user.value = newUser
-    return true
+  }
+
+  async function logout() {
+    setAuthData(null, null)
+    router.push({ name: 'Login' })
+  }
+
+  async function fetchUser() {
+    if (!token.value) return
+    try {
+      // HACK: Assuming a /users/me endpoint exists.
+      // This needs to be created in the backend.
+      const { data } = await apiClient.get<User>('/users/me')
+      user.value = data
+    } catch (error) {
+      console.error('Failed to fetch user:', error)
+      // If fetching user fails, token might be invalid
+      setAuthData(null, null)
+    }
+  }
+
+  async function checkAuth() {
+    if (token.value) {
+      await fetchUser()
+    }
   }
 
   return {
     user,
+    token,
     isAuthenticated,
+    register,
     login,
     logout,
-    register
+    checkAuth,
+    fetchUser
   }
 })
