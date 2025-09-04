@@ -1,99 +1,107 @@
-import type { User, Project, Task, ContentBlock } from '../types'
+import {
+  type User,
+  type Project,
+  type Task,
+  type Phase,
+  ProjectStatus
+} from '../types'
+
+// Mock phases for projects to maintain UI compatibility while integrating with API
+export const mockPhases: Phase[] = [
+  {
+    id: 'idea',
+    title: 'Idea de Investigación',
+    order: 0,
+    color: '#f3e8ff'
+  },
+  {
+    id: 'problem',
+    title: 'Planteamiento del Problema',
+    order: 1,
+    color: '#dbeafe'
+  },
+  {
+    id: 'framework',
+    title: 'Marco Teórico',
+    order: 2,
+    color: '#dcfce7'
+  },
+  {
+    id: 'methodology',
+    title: 'Metodología',
+    order: 3,
+    color: '#fef3c7'
+  },
+  {
+    id: 'results',
+    title: 'Resultados',
+    order: 4,
+    color: '#fed7d7'
+  },
+  {
+    id: 'conclusions',
+    title: 'Conclusiones',
+    order: 5,
+    color: '#e0e7ff'
+  }
+]
 
 // Mock data for InvestiFlow platform
 export const users: User[] = [
   {
-    id: '1',
+    id: 1,
     email: 'juan.perez@universidad.edu',
-    password: 'password123',
-    name: 'Juan Pérez',
-    avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop',
-    role: 'researcher',
-    institution: 'Universidad Nacional'
+    full_name: 'Juan Pérez',
+    phone_number: '+573001234567',
+    university: 'Universidad Nacional',
+    research_group: null,
+    career: null,
+    is_active: true,
+    is_verified: true,
+    created_at: '2024-01-15T00:00:00Z',
+    updated_at: '2024-01-15T00:00:00Z'
   },
   {
-    id: '2',
+    id: 2,
     email: 'maria.garcia@instituto.org',
-    password: 'password123',
-    name: 'María García',
-    avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop',
-    role: 'professor',
-    institution: 'Instituto de Investigación'
+    full_name: 'María García',
+    phone_number: '+573009876543',
+    university: 'Instituto de Investigación',
+    research_group: 'Grupo de IA',
+    career: 'Ingeniería de Sistemas',
+    is_active: true,
+    is_verified: true,
+    created_at: '2024-01-15T00:00:00Z',
+    updated_at: '2024-01-15T00:00:00Z'
   }
 ]
 
 export const projects: Project[] = [
   {
-    id: '1',
-    title: 'Impacto de la IA en la Educación Superior',
+    id: 1,
+    name: 'Impacto de la IA en la Educación Superior',
     description: 'Estudio sobre la implementación de inteligencia artificial en procesos educativos universitarios',
-    owner_id: '1',
-    collaborators: ['2'],
-    status: 'active',
-    created_at: '2024-01-15',
-    updated_at: '2024-12-20',
-    phases: [
-      {
-        id: 'idea',
-        title: 'Idea de Investigación',
-        order: 0,
-        color: '#f3e8ff'
-      },
-      {
-        id: 'problem',
-        title: 'Planteamiento del Problema',
-        order: 1,
-        color: '#dbeafe'
-      },
-      {
-        id: 'framework',
-        title: 'Marco Teórico',
-        order: 2,
-        color: '#dcfce7'
-      },
-      {
-        id: 'methodology',
-        title: 'Metodología',
-        order: 3,
-        color: '#fef3c7'
-      },
-      {
-        id: 'results',
-        title: 'Resultados',
-        order: 4,
-        color: '#fed7d7'
-      },
-      {
-        id: 'conclusions',
-        title: 'Conclusiones',
-        order: 5,
-        color: '#e0e7ff'
-      }
-    ]
+    owner_id: 1,
+    status: ProjectStatus.PLANNING,
+    research_type: null,
+    institution: null,
+    research_group: null,
+    category: null,
+    created_at: '2024-01-15T00:00:00Z',
+    updated_at: '2024-12-20T00:00:00Z'
   },
   {
-    id: '2',
-    title: 'Sostenibilidad en Arquitectura Urbana',
+    id: 2,
+    name: 'Sostenibilidad en Arquitectura Urbana',
     description: 'Análisis de técnicas de construcción sostenible en centros urbanos',
-    owner_id: '1',
-    collaborators: [],
-    status: 'draft',
-    created_at: '2024-12-10',
-    updated_at: '2024-12-20',
-    phases: [
-      {
-        id: 'idea',
-        title: 'Idea de Investigación',
-        order: 0,
-        color: '#f3e8ff'
-      },
-      {
-        id: 'problem',
-        title: 'Planteamiento del Problema',
-        order: 1,
-        color: '#dbeafe'
-      }
-    ]
+    owner_id: 1,
+    status: ProjectStatus.PLANNING,
+    research_type: null,
+    institution: null,
+    research_group: null,
+    category: null,
+    created_at: '2024-12-10T00:00:00Z',
+    updated_at: '2024-12-20T00:00:00Z'
   }
 ]
 
@@ -236,75 +244,40 @@ export const getCurrentUser = (): User | null => {
 }
 
 export const authenticateUser = (email: string, password: string): User | null => {
-  const user = users.find(u => u.email === email && u.password === password)
-  if (user) {
-    const { password: _, ...userWithoutPassword } = user
-    localStorage.setItem('investiflow_user', JSON.stringify(userWithoutPassword))
-    return userWithoutPassword as User
+  // Simplified mock authentication - in real app this would be handled by the API
+  const user = users.find(u => u.email === email)
+  if (user && password === 'password123') { // Mock password check
+    localStorage.setItem('investiflow_user', JSON.stringify(user))
+    return user
   }
   return null
 }
 
-export const getUserProjects = (userId: string): Project[] => {
-  return projects.filter(p => p.owner_id === userId || p.collaborators.includes(userId))
+export const getUserProjects = (userId: number): Project[] => {
+  return projects.filter(p => p.owner_id === userId)
 }
 
 export const getProjectTasks = (projectId: string): Task[] => {
   return tasks.filter(t => t.project_id === projectId)
 }
 
-export const getProjectById = (projectId: string): Project | undefined => {
+export const getProjectById = (projectId: number): Project | undefined => {
   return projects.find(p => p.id === projectId)
 }
 
 export const createProject = (projectData: Partial<Project>): Project => {
   const newProject: Project = {
-    id: Date.now().toString(),
-    title: projectData.title || '',
+    id: Date.now(),
+    name: projectData.name || '',
     description: projectData.description || '',
-    owner_id: projectData.owner_id || '',
-    collaborators: projectData.collaborators || [],
-    status: projectData.status || 'draft',
+    owner_id: projectData.owner_id || 1,
+    status: projectData.status || ProjectStatus.PLANNING,
+    research_type: projectData.research_type || null,
+    institution: projectData.institution || null,
+    research_group: projectData.research_group || null,
+    category: projectData.category || null,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    phases: [
-      {
-        id: 'idea',
-        title: 'Idea de Investigación',
-        order: 0,
-        color: '#f3e8ff'
-      },
-      {
-        id: 'problem',
-        title: 'Planteamiento del Problema',
-        order: 1,
-        color: '#dbeafe'
-      },
-      {
-        id: 'framework',
-        title: 'Marco Teórico',
-        order: 2,
-        color: '#dcfce7'
-      },
-      {
-        id: 'methodology',
-        title: 'Metodología',
-        order: 3,
-        color: '#fef3c7'
-      },
-      {
-        id: 'results',
-        title: 'Resultados',
-        order: 4,
-        color: '#fed7d7'
-      },
-      {
-        id: 'conclusions',
-        title: 'Conclusiones',
-        order: 5,
-        color: '#e0e7ff'
-      }
-    ]
+    updated_at: new Date().toISOString()
   }
   projects.push(newProject)
   return newProject
