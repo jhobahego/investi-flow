@@ -14,12 +14,12 @@
               <ArrowLeftIcon class="w-5 h-5" />
             </button>
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">{{ currentProject.title }}</h1>
+              <h1 class="text-2xl font-bold text-gray-900">{{ currentProject.name }}</h1>
               <p class="text-gray-600">{{ currentProject.description }}</p>
             </div>
           </div>
           
-          <div class="flex items-center space-x-4">
+          <!-- <div class="flex items-center space-x-4">
             <div class="flex -space-x-2">
               <img 
                 :src="ownerAvatar"
@@ -35,11 +35,11 @@
                 :title="collaborator.name"
                 class="w-8 h-8 rounded-full border-2 border-white"
               >
-            </div>
+            </div> -->
             <button class="text-gray-500 hover:text-gray-700 transition-colors">
               <UserPlusIcon class="w-5 h-5" />
             </button>
-          </div>
+          <!-- </div> -->
         </div>
       </div>
       
@@ -48,7 +48,7 @@
         <div class="flex-shrink-0 w-80" v-for="phase in currentProject.phases" :key="phase.id">
           <PhaseColumn
             :phase="phase"
-            :tasks="currentTasks"
+            :tasks="currentTasks || []"
             @add-task="handleAddTask(phase.id)"
             @task-click="handleTaskClick"
             @task-edit="handleTaskEdit"
@@ -272,9 +272,9 @@ const ownerName = computed(() => owner.value?.name || '')
 
 const collaboratorAvatars = computed(() => {
   if (!currentProject.value) return []
-  return currentProject.value.collaborators.map(id => 
+  return currentProject.value?.collaborators?.map(id => 
     users.find(u => u.id === id)
-  ).filter(Boolean)
+  )?.filter(Boolean)
 })
 
 const handleTaskClick = (task) => {
@@ -400,6 +400,8 @@ const formatDate = (dateString) => {
 }
 
 onMounted(() => {
-  projectsStore.loadProject(route.params.id)
+  if (route.params.id) {
+    projectsStore.loadProject(route.params.id)
+  }
 })
 </script>
