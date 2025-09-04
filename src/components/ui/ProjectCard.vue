@@ -3,7 +3,7 @@
        @click="$emit('click')">
     <div class="p-6">
       <div class="flex items-start justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ project.title }}</h3>
+        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ project.name }}</h3>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
               :class="statusClasses">
           {{ statusText }}
@@ -15,14 +15,9 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <div class="flex -space-x-2 overflow-hidden">
-            <img class="inline-block h-6 w-6 rounded-full ring-2 ring-white"
-                 :src="ownerAvatar"
-                 :alt="ownerName">
-            <img v-for="collaborator in collaboratorAvatars" 
-                 :key="collaborator.id"
-                 class="inline-block h-6 w-6 rounded-full ring-2 ring-white"
-                 :src="collaborator.avatar"
-                 :alt="collaborator.name">
+            <div class="h-6 w-6 rounded-full ring-2 ring-white bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+              <span class="text-white text-xs font-bold">U</span>
+            </div>
           </div>
           <span class="text-xs text-gray-500">
             {{ totalMembers }} miembro{{ totalMembers !== 1 ? 's' : '' }}
@@ -39,7 +34,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { users } from '../../data/mockData'
 
 const props = defineProps({
   project: {
@@ -51,26 +45,35 @@ const props = defineProps({
 defineEmits(['click'])
 
 const statusClasses = computed(() => {
-  return props.project.status === 'active' 
-    ? 'bg-green-100 text-green-800'
-    : 'bg-yellow-100 text-yellow-800'
+  const statusMap = {
+    'planning': 'bg-blue-100 text-blue-800',
+    'in_progress': 'bg-green-100 text-green-800',
+    'completed': 'bg-gray-100 text-gray-800',
+    'on_hold': 'bg-yellow-100 text-yellow-800',
+    'cancelled': 'bg-red-100 text-red-800'
+  }
+  return statusMap[props.project.status] || 'bg-gray-100 text-gray-800'
 })
 
 const statusText = computed(() => {
-  return props.project.status === 'active' ? 'Activo' : 'Borrador'
+  const statusMap = {
+    'planning': 'Planificación',
+    'in_progress': 'En progreso',
+    'completed': 'Completado',
+    'on_hold': 'En pausa',
+    'cancelled': 'Cancelado'
+  }
+  return statusMap[props.project.status] || 'Desconocido'
 })
 
-const owner = computed(() => users.find(u => u.id === props.project.owner_id))
-const ownerAvatar = computed(() => owner.value?.avatar || '')
-const ownerName = computed(() => owner.value?.name || '')
-
-const collaboratorAvatars = computed(() => {
-  return props.project.collaborators.map(id => 
-    users.find(u => u.id === id)
-  ).filter(Boolean)
+const ownerAvatar = computed(() => {
+  // Generate avatar based on project owner_id
+  return `https://i.pravatar.cc/150?u=${props.project.owner_id}`
 })
 
-const totalMembers = computed(() => 1 + props.project.collaborators.length)
+const ownerName = computed(() => `Usuario ${props.project.owner_id}`)
+
+const totalMembers = computed(() => 1) // Only owner for now
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('es-ES', {
