@@ -8,7 +8,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-3xl font-bold text-gray-900">
-              Bienvenid@, {{ user?.name }}
+              Bienvenid@, {{ user?.full_name }}
             </h1>
             <p class="text-gray-600 mt-1">
               Gestiona tus proyectos de investigación y colabora con tu equipo
@@ -82,8 +82,11 @@
           <div class="flex items-center space-x-4">
             <select v-model="filterStatus" class="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
               <option value="">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="draft">Borradores</option>
+              <option value="planning">Planificación</option>
+              <option value="in_progress">En progreso</option>
+              <option value="completed">Completado</option>
+              <option value="on_hold">En pausa</option>
+              <option value="cancelled">Cancelado</option>
             </select>
           </div>
         </div>
@@ -120,14 +123,14 @@
     >
       <form @submit.prevent="handleCreateProject" class="space-y-6">
         <div>
-          <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-            Título del proyecto
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+            Nombre del proyecto
           </label>
           <input
-            id="title"
+            id="name"
             type="text"
             required
-            v-model="newProject.title"
+            v-model="newProject.name"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             placeholder="Ej: Impacto de la IA en la Educación Superior"
           />
@@ -169,7 +172,7 @@
         </button>
         <button
           @click="handleCreateProject"
-          :disabled="!newProject.title || !newProject.description"
+          :disabled="!newProject.name || !newProject.description"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Crear Proyecto
@@ -203,7 +206,7 @@ const showCreateModal = ref(false)
 const filterStatus = ref('')
 
 const newProject = reactive({
-  title: '',
+  name: '',
   description: ''
 })
 
@@ -216,43 +219,42 @@ const filteredProjects = computed(() => {
 })
 
 const activeProjects = computed(() => 
-  projects.value.filter(p => p.status === 'active').length
+  projects.value.filter(p => p.status === 'in_progress').length
 )
 
 const projectsWithAI = computed(() => 
-  projects.value.filter(p => p.status === 'active').length // Simplified for mock
+  projects.value.filter(p => p.status === 'in_progress').length // Simplified for mock
 )
 
 const totalCollaborators = computed(() => 
-  projects.value.reduce((total, p) => total + p.collaborators.length, 0)
+  projects.value.length // Simplified, no collaborators in current API
 )
 
 const navigateToProject = (projectId) => {
+  projectsStore.setCurrentProjectId(projectId)
   router.push(`/project/${projectId}`)
 }
 
-const handleCreateProject = () => {
-  if (!newProject.title || !newProject.description) return
+const handleCreateProject = async () => {
+  if (!newProject.name || !newProject.description) return
   
-  const projectData = {
-    title: newProject.title,
-    description: newProject.description,
-    owner_id: user.value.id,
-    collaborators: [],
-    status: 'draft'
+  try {
+    await projectsStore.createProject({
+      name: newProject.name,
+      description: newProject.description
+    })
+    
+    // Reset form and close modal
+    newProject.name = ''
+    newProject.description = ''
+    showCreateModal.value = false
+  } catch (error) {
+    console.error('Error creating project:', error)
+    // Handle error (show notification, etc.)
   }
-  
-  projectsStore.addProject(projectData)
-  
-  // Reset form and close modal
-  newProject.title = ''
-  newProject.description = ''
-  showCreateModal.value = false
 }
 
-onMounted(() => {
-  if (user.value) {
-    projectsStore.loadUserProjects(user.value.id)
-  }
+onMounted(async () => {
+  await projectsStore.fetchProjects()
 })
 </script>
