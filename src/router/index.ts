@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { getCurrentUser } from '../data/mockData'
+import { useAuthStore } from '../stores/auth'
+// import HomePage from '../views/HomePage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -37,7 +38,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (to.meta.requiresAuth && !getCurrentUser()) {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else {
     next()
