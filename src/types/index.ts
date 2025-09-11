@@ -1,7 +1,40 @@
-// Types for API Payloads and Responses
+// ===============================
+// TIPOS BASADOS EN LA API
+// ===============================
 
-// From app/schemas/user.py
-export interface User {
+// --- ENUMS ---
+export enum ProjectStatus {
+  PLANNING = 'planning',
+  IN_PROGRESS = 'in_progress',
+  ON_HOLD = 'on_hold',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
+export enum ResearchType {
+  BASIC = 'basic',
+  APPLIED = 'applied',
+  EXPERIMENTAL = 'experimental',
+  THEORETICAL = 'theoretical',
+  QUALITATIVE = 'qualitative',
+  QUANTITATIVE = 'quantitative',
+  MIXED = 'mixed'
+}
+
+export enum TaskStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  ON_HOLD = 'on_hold'
+}
+
+export enum FileType {
+  PDF = 'pdf',
+  DOCX = 'docx'
+}
+
+// --- USER TYPES ---
+export interface UserResponse {
   id: number
   email: string
   full_name: string
@@ -15,20 +48,38 @@ export interface User {
   updated_at: string
 }
 
-export interface UserCreatePayload {
+export interface UserCreate {
   email: string
   full_name: string
   password: string
   phone_number: string
-  university?: string
-  research_group?: string
-  career?: string
+  university?: string | null
+  research_group?: string | null
+  career?: string | null
 }
 
-// From app/schemas/token.py
+export interface UserUpdate {
+  full_name?: string | null
+  phone_number?: string | null
+  university?: string | null
+  research_group?: string | null
+  career?: string | null
+}
+
+// --- AUTH TYPES ---
+export interface Token {
+  access_token: string
+  refresh_token: string
+  token_type: string
+}
+
 export interface LoginPayload {
   username: string // This is the email
   password: string
+  grant_type?: string | null
+  scope?: string
+  client_id?: string | null
+  client_secret?: string | null
 }
 
 // Form data interfaces for the frontend
@@ -37,89 +88,132 @@ export interface LoginFormData {
   password: string
 }
 
-export interface TokenResponse {
-  access_token: string
-  refresh_token: string
-  token_type: string
-}
-
-// From app/models/project.py
-export enum ProjectStatus {
-  PLANNING = 'planning',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  ON_HOLD = 'on_hold',
-  CANCELLED = 'cancelled'
-}
-
-export enum ResearchType {
-  THEORETICAL = 'theoretical',
-  APPLIED = 'applied',
-  DESCRIPTIVE = 'descriptive',
-  EXPLORATORY = 'exploratory',
-  CORRELATIONAL = 'correlational',
-  EXPLANATORY = 'explanatory',
-  EXPERIMENTAL = 'experimental',
-  QUALITATIVE = 'qualitative',
-  QUANTITATIVE = 'quantitative',
-  MIXED = 'mixed'
-}
-
-// From app/schemas/project.py
-export interface Project {
+// --- PROJECT TYPES ---
+export interface ProjectResponse {
   id: number
-  owner_id: number
   name: string
   description: string | null
   research_type: ResearchType | null
   institution: string | null
   research_group: string | null
   category: string | null
-  status: ProjectStatus
+  status: ProjectStatus | null
   created_at: string
   updated_at: string
 }
 
-export interface ProjectCreatePayload {
+export interface ProjectCreate {
   name: string
-  description?: string
-  research_type?: ResearchType
-  institution?: string
-  research_group?: string
-  category?: string
-  status?: ProjectStatus
+  description?: string | null
+  research_type?: ResearchType | null
+  institution?: string | null
+  research_group?: string | null
+  category?: string | null
+  status?: ProjectStatus | null
 }
 
-export interface ProjectUpdatePayload {
-  name?: string
-  description?: string
-  research_type?: ResearchType
-  institution?: string
-  research_group?: string
-  category?: string
-  status?: ProjectStatus
+export interface ProjectUpdate {
+  name?: string | null
+  description?: string | null
+  research_type?: ResearchType | null
+  institution?: string | null
+  research_group?: string | null
+  category?: string | null
+  status?: ProjectStatus | null
 }
 
-// --- Manteniendo interfaces existentes si aún son necesarias para la UI ---
+// --- PHASE TYPES ---
+export interface PhaseResponse {
+  id: number
+  name: string
+  position: number
+  color: string | null
+  project_id: number
+}
 
-export interface Phase {
-  id: string
+export interface PhaseCreate {
+  name: string
+  position: number
+  color?: string | null
+  project_id: number
+}
+
+export interface PhaseUpdate {
+  name?: string | null
+  position?: number | null
+  color?: string | null
+}
+
+export interface PhaseOrder {
+  id: number
+  position: number
+}
+
+// --- TASK TYPES ---
+export interface TaskResponse {
+  id: number
   title: string
-  order: number
-  color: string
-}
-
-export interface Task {
-  id: string
-  project_id: string
-  phase_id: string
-  title: string
-  order: number
-  created_by: string
+  description: string | null
+  position: number
+  status: TaskStatus | null
+  start_date: string | null
+  end_date: string | null
+  completed: boolean | null
+  phase_id: number
   created_at: string
-  content_blocks: ContentBlock[]
+  updated_at: string
 }
 
+export interface TaskCreate {
+  title: string
+  description?: string | null
+  position?: number
+  status?: TaskStatus | null
+  start_date?: string | null
+  end_date?: string | null
+  completed?: boolean | null
+  phase_id: number
+}
+
+export interface TaskUpdate {
+  title?: string | null
+  description?: string | null
+  position?: number | null
+  status?: TaskStatus | null
+  start_date?: string | null
+  end_date?: string | null
+  completed?: boolean | null
+}
+
+// --- ATTACHMENT TYPES ---
+export interface AttachmentResponse {
+  id: number
+  file_name: string
+  file_type: FileType
+  file_size: number
+  file_path: string
+  project_id: number | null
+  phase_id: number | null
+  task_id: number | null
+  created_at: string
+  updated_at: string
+}
+
+// --- COMPOSITE TYPES FOR FRONTEND ---
+export interface ProjectWithPhases extends ProjectResponse {
+  phases: PhaseResponse[]
+}
+
+export interface PhaseWithTasks extends PhaseResponse {
+  tasks: TaskResponse[]
+}
+
+export interface ProjectBoard {
+  project: ProjectResponse
+  phases: PhaseWithTasks[]
+}
+
+// --- LEGACY TYPES (Mantener compatibilidad con UI existente) ---
 export interface ContentBlock {
   id: string
   type: 'user_text' | 'ai_suggestion'
@@ -128,19 +222,28 @@ export interface ContentBlock {
   ai_context?: string
 }
 
-// Types for API Error Handling
-interface ValidationErrorDetail {
-  input: string,
-  loc: string[];
-  msg: string;
-  type: string;
+// --- ERROR TYPES ---
+export interface ValidationErrorDetail {
+  loc: (string | number)[]
+  msg: string
+  type: string
+  input: string
 }
 
-export interface ValidationErrorResponse {
-  detail: ValidationErrorDetail[];
+export interface ApiError {
+  detail: string
 }
 
-export interface AuthorizationError {
-  detail: string;
+export interface ProcessedValidationError {
+  errorMessage: string
+  errorType: string
+  inputValue: string
 }
+
+// Alias para compatibilidad
+export type Project = ProjectResponse
+export type User = UserResponse
+export type ProjectCreatePayload = ProjectCreate
+export type ProjectUpdatePayload = ProjectUpdate
+export type TokenResponse = Token
 
