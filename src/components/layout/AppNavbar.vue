@@ -2,29 +2,30 @@
   <nav class="bg-white shadow-sm border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
-        <div class="flex items-center">
+        <div class="flex items-center space-x-8">
           <router-link to="/" class="flex items-center space-x-2">
-            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
+            <div
+              class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-sm">IF</span>
             </div>
             <span class="text-xl font-bold text-gray-900">InvestiFlow</span>
           </router-link>
+
+          <!-- Search Bar - only show when authenticated -->
+          <SearchBar v-if="isAuthenticated" />
         </div>
-        
+
         <div class="flex items-center space-x-4" v-if="isAuthenticated">
-          <router-link 
-            to="/dashboard" 
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
+          <router-link to="/dashboard"
+            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
             Dashboard
           </router-link>
-          
+
           <div class="relative" ref="userMenuRef">
-            <button
-              @click="showUserMenu = !showUserMenu"
-              class="flex items-center space-x-2 text-gray-700 hover:text-primary-600 focus:outline-none"
-            >
-              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+            <button @click="showUserMenu = !showUserMenu"
+              class="flex items-center space-x-2 text-gray-700 hover:text-primary-600 focus:outline-none">
+              <div
+                class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
                 <span class="text-white font-bold text-sm">
                   {{ user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}
                 </span>
@@ -32,11 +33,9 @@
               <span class="text-sm font-medium">{{ user?.full_name || 'Usuario' }}</span>
               <ChevronDownIcon class="w-4 h-4" />
             </button>
-            
-            <div
-              v-show="showUserMenu"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
-            >
+
+            <div v-show="showUserMenu"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
               <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                 Mi Perfil
               </a>
@@ -44,27 +43,21 @@
                 Configuración
               </a>
               <hr class="my-1">
-              <button
-                @click="handleLogout"
-                class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-              >
+              <button @click="handleLogout"
+                class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50">
                 Cerrar Sesión
               </button>
             </div>
           </div>
         </div>
-        
+
         <div class="flex items-center space-x-4" v-else>
-          <router-link 
-            to="/login"
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-          >
+          <router-link to="/login"
+            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
             Iniciar Sesión
           </router-link>
-          <router-link 
-            to="/register"
-            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          >
+          <router-link to="/register"
+            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
             Registrarse
           </router-link>
         </div>
@@ -78,6 +71,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { ChevronDownIcon } from '@heroicons/vue/24/outline'
+import SearchBar from '../ui/SearchBar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
