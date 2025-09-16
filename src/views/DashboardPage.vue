@@ -102,7 +102,7 @@
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project"
-            @click="navigateToProject(project.id)" />
+            @click="navigateToProject(project.id)" @delete="handleDeleteProject" />
         </div>
       </div>
     </div>
@@ -151,6 +151,12 @@
         </button>
       </template>
     </Modal>
+
+    <!-- Delete Project Confirmation -->
+    <ConfirmDialog :is-open="showDeleteModal" :loading="projectsStore.loading" title="Eliminar Proyecto"
+      :message="`¿Estás seguro que deseas eliminar el proyecto '${projectToDelete?.name}'? Esta acción no se puede deshacer.`"
+      :confirm-text="projectToDelete?.name" confirm-button-text="Eliminar Proyecto" @confirm="confirmDeleteProject"
+      @cancel="cancelDeleteProject" />
   </div>
 </template>
 
@@ -162,6 +168,7 @@ import { useProjectsStore } from '../stores/projects'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import ProjectCard from '../components/ui/ProjectCard.vue'
 import Modal from '../components/ui/Modal.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import LexiAvatar from '../components/ui/LexiAvatar.vue'
 import {
   PlusIcon,
@@ -175,6 +182,8 @@ const authStore = useAuthStore()
 const projectsStore = useProjectsStore()
 
 const showCreateModal = ref(false)
+const showDeleteModal = ref(false)
+const projectToDelete = ref(null)
 const filterStatus = ref('')
 
 const newProject = reactive({
@@ -224,6 +233,30 @@ const handleCreateProject = async () => {
     console.error('Error creating project:', error)
     // Handle error (show notification, etc.)
   }
+}
+
+const handleDeleteProject = (project) => {
+  projectToDelete.value = project
+  showDeleteModal.value = true
+}
+
+const confirmDeleteProject = async () => {
+  if (!projectToDelete.value) return
+
+  try {
+    await projectsStore.deleteProject(projectToDelete.value.id)
+    showDeleteModal.value = false
+    projectToDelete.value = null
+    // Optionally show success notification
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    // Handle error (show notification, etc.)
+  }
+}
+
+const cancelDeleteProject = () => {
+  showDeleteModal.value = false
+  projectToDelete.value = null
 }
 
 onMounted(async () => {
