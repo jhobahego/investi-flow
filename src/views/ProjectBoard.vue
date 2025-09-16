@@ -53,15 +53,18 @@
       <!-- Kanban Board -->
       <div class="flex space-x-6 overflow-x-auto pb-6">
         <div class="flex-shrink-0 w-80" v-for="phase in projectsStore.currentProject.phases" :key="phase.id">
-          <PhaseColumn :phase="phase" :tasks="currentTasks" @add-task="handleCreateTask" @task-click="(task: TaskResponse) => {
-            selectedTask = task
-            showTaskDetailModal = true
-          }" @task-edit="handleEditPhase" @task-delete="(task: TaskResponse) => {
-            tasksStore.deleteTask(task.id).then(() => {
-              tasksStore.getTasksByPhase(phase.id)
-            })
-          }" @delete-phase="handleDeletePhase" @chat-with-lexi="() => { }" @task-drag-start="() => { }"
-            @task-drop="() => { }" />
+          <PhaseColumn
+            :phase="phase"
+            :tasks="currentTasks"
+            @add-task="handleCreateTask"
+            @task-click="handleTaskClick"
+            @task-edit="handleEditPhase"
+            @task-delete="handleTaskDelete"
+            @delete-phase="handleDeletePhase"
+            @chat-with-lexi="() => { }"
+            @task-drag-start="() => { }"
+            @task-drop="() => { }"
+          />
         </div>
       </div>
     </div>
@@ -468,6 +471,17 @@ const newTask = ref<Partial<TaskResponse>>({
 const handleCreateTask = (phaseId: number) => {
   newTask.value.phase_id = phaseId
   showCreateTaskModal.value = true
+}
+const handleTaskClick = (task: TaskResponse) => {
+  selectedTask.value = task
+  showTaskDetailModal.value = true
+}
+const handleTaskDelete = async (task: TaskResponse) => {
+  await tasksStore.deleteTask(task.id)
+
+  if (task.phase_id) {
+    await tasksStore.getTasksByPhase(task.phase_id)
+  }
 }
 const createTask = async () => {
   const { title, description, position, phase_id } = newTask.value
