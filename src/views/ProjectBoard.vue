@@ -487,7 +487,7 @@ const createTask = async () => {
   const { title, description, position, phase_id } = newTask.value
 
   if (title == undefined) return
-  if (phase_id == undefined) return
+  if (phase_id === undefined) return
 
   const taskData: TaskCreate = {
     title,
