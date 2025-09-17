@@ -100,6 +100,11 @@
           </button>
         </div>
 
+        <div v-else-if="true" class="max-w-full px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-center h-24">
+            <div class="text-gray-500">Cargando proyectos...</div>
+          </div>
+        </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project"
             @click="navigateToProject(project.id)" @delete="handleDeleteProject" />
@@ -174,7 +179,8 @@ import {
   PlusIcon,
   FolderIcon,
   CheckCircleIcon,
-  UsersIcon
+  UsersIcon,
+  ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
