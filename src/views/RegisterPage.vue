@@ -138,8 +138,8 @@
           </div>
         </div>
         
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3">
-          <p class="text-sm text-red-700">{{ error }}</p>
+        <div v-if="error || authStore.errorMessage" class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-sm text-red-700">{{ error || authStore.errorMessage }}</p>
         </div>
 
         <div class="flex items-center">
@@ -162,10 +162,10 @@
         <div>
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="authStore.loading"
             class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
-            <span v-if="!loading">Crear Cuenta</span>
+            <span v-if="!authStore.loading">Crear Cuenta</span>
             <span v-else class="flex items-center">
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -181,14 +181,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const loading = ref(false)
 const error = ref('')
 
 const form = reactive({
@@ -205,7 +204,9 @@ const form = reactive({
 
 const handleRegister = async () => {
   error.value = ''
+  authStore.clearError()
   
+  // Validaciones del frontend
   if (form.password !== form.confirmPassword) {
     error.value = 'Las contraseñas no coinciden'
     return
@@ -220,30 +221,27 @@ const handleRegister = async () => {
     error.value = 'Debes aceptar los términos y condiciones'
     return
   }
-  
-  loading.value = true
-  
-  try {
-    await authStore.register({
-      email: form.email,
-      full_name: form.full_name,
-      password: form.password,
-      phone_number: form.phone_number,
-      university: form.university || undefined,
-      research_group: form.research_group || undefined,
-      career: form.career || undefined
-    })
-    
+
+  const result = await authStore.register({
+    email: form.email,
+    full_name: form.full_name,
+    password: form.password,
+    phone_number: form.phone_number,
+    university: form.university || undefined,
+    research_group: form.research_group || undefined,
+    career: form.career || undefined
+  })
+
+  if (result.success) {
     // Redirigir al login tras registro exitoso
     router.push({
       name: 'Login',
       query: { message: 'Registro exitoso. Ahora puedes iniciar sesión.' }
     })
-  } catch (err) {
-    console.error('Registration error:', err)
-    error.value = err.message || 'Error al registrar la cuenta. Por favor, verifica los datos e intenta nuevamente.'
-  } finally {
-    loading.value = false
   }
 }
+
+onMounted(() => {
+  authStore.clearError()
+})
 </script>

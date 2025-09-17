@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Project',
     component: () => import('../views/ProjectBoard.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/search',
+    name: 'SearchResults',
+    component: () => import('../views/SearchResults.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

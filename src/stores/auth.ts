@@ -7,6 +7,8 @@ import type { User, UserCreatePayload, TokenResponse, LoginFormData } from '../t
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('accessToken'))
+  const loading = ref(false)
+  const errorMessage = ref('')
   const router = useRouter()
 
   const isAuthenticated = computed(() => !!token.value)
@@ -27,20 +29,30 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(payload: UserCreatePayload) {
+    loading.value = true
+    errorMessage.value = ''
+
     try {
       await apiClient.post('/auth/register', payload)
+      return { success: true }
     } catch (error) {
-      console.error('Registration failed:', error)
-      throw error
+      console.error('Registration error:', error)
+      errorMessage.value = error instanceof Error ? error.message : 'Error al registrar la cuenta. Por favor, intenta nuevamente.'
+      return { success: false }
+    } finally {
+      loading.value = false
     }
   }
 
   async function login(credentials: LoginFormData) {
-    try {
-      const formData = new FormData()
-      formData.append('username', credentials.email)
-      formData.append('password', credentials.password)
+    loading.value = true
+    errorMessage.value = ''
 
+    const formData = new FormData()
+    formData.append('username', credentials.email)
+    formData.append('password', credentials.password)
+
+    try {
       const { data } = await apiClient.post<TokenResponse>(
         '/auth/login',
         formData,
@@ -53,10 +65,14 @@ export const useAuthStore = defineStore('auth', () => {
       setAuthData(null, data.access_token)
       await fetchUser()
       router.push({ name: 'Dashboard' })
+      return { success: true }
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('Login error:', error)
       setAuthData(null, null)
-      throw error
+      errorMessage.value = error instanceof Error ? error.message : 'Error al iniciar sesión. Por favor, intenta nuevamente.'
+      return { success: false }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -85,14 +101,28 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function clearError() {
+    errorMessage.value = ''
+  }
+
+  // TODO: Remove this temporary function once vee-validate is integrated in the registration form.
+  // Tracking: See issue #123 (replace with your actual issue/ticket reference)
+  function setError(message: string) {
+    errorMessage.value = message
+  }
+
   return {
     user,
     token,
+    loading,
+    errorMessage,
     isAuthenticated,
     register,
     login,
     logout,
     checkAuth,
-    fetchUser
+    fetchUser,
+    clearError,
+    setError
   }
 })

@@ -1,10 +1,10 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <AppNavbar />
-    
+
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-8">
+      <header class="mb-8">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-3xl font-bold text-gray-900">
@@ -14,16 +14,14 @@
               Gestiona tus proyectos de investigación y colabora con tu equipo
             </p>
           </div>
-          <button
-            @click="showCreateModal = true"
-            class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
-          >
+          <button @click="showCreateModal = true"
+            class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2">
             <PlusIcon class="w-5 h-5" />
             <span>Nuevo Proyecto</span>
           </button>
         </div>
-      </div>
-      
+      </header>
+
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -37,7 +35,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-green-100">
@@ -49,7 +47,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-secondary-100">
@@ -61,7 +59,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-yellow-100">
@@ -74,13 +72,14 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Projects Grid -->
       <div class="mb-8">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-semibold text-gray-900">Mis Proyectos</h2>
           <div class="flex items-center space-x-4">
-            <select v-model="filterStatus" class="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
+            <select v-model="filterStatus"
+              class="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
               <option value="">Todos los estados</option>
               <option value="planning">Planificación</option>
               <option value="in_progress">En progreso</option>
@@ -90,95 +89,74 @@
             </select>
           </div>
         </div>
-        
+
         <div v-if="filteredProjects.length === 0" class="text-center py-12">
           <FolderIcon class="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 mb-2">No tienes proyectos aún</h3>
           <p class="text-gray-600 mb-6">Crea tu primer proyecto de investigación y comienza a trabajar con Lexi</p>
-          <button
-            @click="showCreateModal = true"
-            class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
-          >
+          <button @click="showCreateModal = true"
+            class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
             Crear mi primer proyecto
           </button>
         </div>
-        
+
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ProjectCard
-            v-for="project in filteredProjects"
-            :key="project.id"
-            :project="project"
-            @click="navigateToProject(project.id)"
-          />
+          <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project"
+            @click="navigateToProject(project.id)" @delete="handleDeleteProject" />
         </div>
       </div>
     </div>
-    
+
     <!-- Create Project Modal -->
-    <Modal
-      :is-open="showCreateModal"
-      @close="showCreateModal = false"
-      title="Crear Nuevo Proyecto"
-      size="lg"
-    >
+    <Modal :is-open="showCreateModal" @close="showCreateModal = false" title="Crear Nuevo Proyecto" size="lg">
       <form @submit.prevent="handleCreateProject" class="space-y-6">
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
             Nombre del proyecto
           </label>
-          <input
-            id="name"
-            type="text"
-            required
-            v-model="newProject.name"
+          <input id="name" type="text" required v-model="newProject.name"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Ej: Impacto de la IA en la Educación Superior"
-          />
+            placeholder="Ej: Impacto de la IA en la Educación Superior" />
         </div>
-        
+
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
             Descripción
           </label>
-          <textarea
-            id="description"
-            rows="4"
-            required
-            v-model="newProject.description"
+          <textarea id="description" rows="4" required v-model="newProject.description"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Describe brevemente tu proyecto de investigación..."
-          ></textarea>
+            placeholder="Describe brevemente tu proyecto de investigación..."></textarea>
         </div>
-        
+
         <div class="bg-secondary-50 p-4 rounded-lg border border-secondary-200">
           <div class="flex items-center space-x-2 mb-2">
             <LexiAvatar :show-name="false" class="scale-75" />
             <span class="text-sm font-medium text-secondary-700">Sugerencia de Lexi:</span>
           </div>
           <p class="text-sm text-gray-700">
-            Un buen proyecto de investigación debe tener un título claro y específico, 
+            Un buen proyecto de investigación debe tener un título claro y específico,
             y una descripción que incluya el problema a resolver y la importancia del estudio.
           </p>
         </div>
       </form>
-      
+
       <template #footer>
-        <button
-          type="button"
-          @click="showCreateModal = false"
-          class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
-        >
+        <button type="button" @click="showCreateModal = false"
+          class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
           Cancelar
         </button>
-        <button
-          @click="handleCreateProject"
-          :disabled="!newProject.name || !newProject.description"
-          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button @click="handleCreateProject" :disabled="!newProject.name || !newProject.description"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
           Crear Proyecto
         </button>
       </template>
     </Modal>
+
+    <!-- Delete Project Confirmation -->
+    <ConfirmDialog :is-open="showDeleteModal" :loading="projectsStore.loading" title="Eliminar Proyecto"
+      :message="`¿Estás seguro que deseas eliminar el proyecto '${projectToDelete?.name}'? Esta acción no se puede deshacer.`"
+      :confirm-text="projectToDelete?.name" confirm-button-text="Eliminar Proyecto" @confirm="confirmDeleteProject"
+      @cancel="cancelDeleteProject" />
   </div>
 </template>
 
@@ -190,12 +168,13 @@ import { useProjectsStore } from '../stores/projects'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import ProjectCard from '../components/ui/ProjectCard.vue'
 import Modal from '../components/ui/Modal.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import LexiAvatar from '../components/ui/LexiAvatar.vue'
-import { 
-  PlusIcon, 
-  FolderIcon, 
-  CheckCircleIcon, 
-  UsersIcon 
+import {
+  PlusIcon,
+  FolderIcon,
+  CheckCircleIcon,
+  UsersIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -203,6 +182,8 @@ const authStore = useAuthStore()
 const projectsStore = useProjectsStore()
 
 const showCreateModal = ref(false)
+const showDeleteModal = ref(false)
+const projectToDelete = ref(null)
 const filterStatus = ref('')
 
 const newProject = reactive({
@@ -218,15 +199,15 @@ const filteredProjects = computed(() => {
   return projects.value.filter(p => p.status === filterStatus.value)
 })
 
-const activeProjects = computed(() => 
+const activeProjects = computed(() =>
   projects.value.filter(p => p.status === 'in_progress').length
 )
 
-const projectsWithAI = computed(() => 
+const projectsWithAI = computed(() =>
   projects.value.filter(p => p.status === 'in_progress').length // Simplified for mock
 )
 
-const totalCollaborators = computed(() => 
+const totalCollaborators = computed(() =>
   projects.value.length // Simplified, no collaborators in current API
 )
 
@@ -237,13 +218,13 @@ const navigateToProject = (projectId) => {
 
 const handleCreateProject = async () => {
   if (!newProject.name || !newProject.description) return
-  
+
   try {
     await projectsStore.createProject({
       name: newProject.name,
       description: newProject.description
     })
-    
+
     // Reset form and close modal
     newProject.name = ''
     newProject.description = ''
@@ -252,6 +233,30 @@ const handleCreateProject = async () => {
     console.error('Error creating project:', error)
     // Handle error (show notification, etc.)
   }
+}
+
+const handleDeleteProject = (project) => {
+  projectToDelete.value = project
+  showDeleteModal.value = true
+}
+
+const confirmDeleteProject = async () => {
+  if (!projectToDelete.value) return
+
+  try {
+    await projectsStore.deleteProject(projectToDelete.value.id)
+    showDeleteModal.value = false
+    projectToDelete.value = null
+    // Optionally show success notification
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    // Handle error (show notification, etc.)
+  }
+}
+
+const cancelDeleteProject = () => {
+  showDeleteModal.value = false
+  projectToDelete.value = null
 }
 
 onMounted(async () => {

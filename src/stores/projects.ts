@@ -1,158 +1,263 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { mockPhases, getProjectTasks, createTask } from '../data/mockData' // Keep mock phases for now
-import type { Project, Phase, Task, ProjectCreatePayload, ProjectUpdatePayload } from '../types'
-import apiClient from '../api/client'
-
-// Extend the Project type for the frontend to include phases temporarily
-export type ProjectWithPhases = Project & { phases: Phase[] }
+import apiClient, { ApiValidationError } from '../api/client'
+import { ProjectStatus } from '../types'
+import type {
+  ProjectResponse,
+  ProjectCreate,
+  ProjectUpdate,
+  ProjectWithPhases,
+  AttachmentResponse
+} from '../types'
 
 export const useProjectsStore = defineStore('projects', () => {
-  const projects = ref<ProjectWithPhases[]>([])
+  const projects = ref<ProjectResponse[]>([])
+  const currentProject = ref<ProjectWithPhases | null>(null)
   const currentProjectId = ref<number | null>(null)
-  const tasks = ref<Task[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-  const currentProject = computed(() => {
-    return projects.value.find((p: ProjectWithPhases) => p.id === currentProjectId.value) || null
+  // Computed properties
+  const projectsCount = computed(() => projects.value.length)
+
+  const projectsByStatus = computed(() => {
+    return projects.value.reduce((acc, project) => {
+      const status = project.status
+      if (!status) return acc
+
+      if (!acc[status]) acc[status] = []
+      acc[status].push(project)
+      return acc
+    }, {} as Record<string, ProjectResponse[]>)
   })
 
-  const currentTasks = computed(() => {
-    if (!currentProjectId.value) return []
-    return tasks.value.filter(task => task.project_id === currentProjectId.value!.toString())
-  })
-
-  function setCurrentProjectId(id: number) {
+  // Actions
+  function setCurrentProjectId(id: number | null) {
     currentProjectId.value = id
   }
 
-  function loadProject(id: string | number) {
-    const projectId = typeof id === 'string' ? parseInt(id) : id
-    setCurrentProjectId(projectId)
-    loadProjectTasks(projectId)
-  }
-
-  function loadProjectTasks(projectId: number) {
-    // Load tasks from mock data for now
-    const projectTasks = getProjectTasks(projectId.toString())
-    tasks.value = [...tasks.value.filter(t => t.project_id !== projectId.toString()), ...projectTasks]
-  }
-
-  function addTask(taskData: { project_id: string | number, phase_id: string, title: string, created_by: number }) {
-    const newTask = createTask({
-      project_id: taskData.project_id.toString(),
-      phase_id: taskData.phase_id,
-      title: taskData.title,
-      created_by: taskData.created_by.toString()
-    })
-    tasks.value.push(newTask)
-    return newTask
-  }
-
-  function updateTaskPhase(taskId: string, newPhaseId: string) {
-    const task = tasks.value.find(t => t.id === taskId)
-    if (task) {
-      task.phase_id = newPhaseId
-    }
-  }
-
-  function addContentBlock(taskId: string, contentBlock: { type: 'user_text' | 'ai_suggestion', content: string, ai_context?: string }) {
-    const task = tasks.value.find(t => t.id === taskId)
-    if (task) {
-      const newBlock = {
-        id: Date.now().toString(),
-        type: contentBlock.type,
-        content: contentBlock.content,
-        created_at: new Date().toISOString(),
-        ...(contentBlock.ai_context && { ai_context: contentBlock.ai_context })
-      }
-      task.content_blocks = task.content_blocks || []
-      task.content_blocks.push(newBlock)
-    }
+  function clearError() {
+    error.value = null
   }
 
   async function fetchProjects() {
+    loading.value = true
+    error.value = null
     try {
-      const { data } = await apiClient.get<Project[]>('/proyectos/')
-      // Attach mock phases to each project to avoid breaking UI
-      projects.value = data.map((p: Project) => ({
-        ...p,
-        phases: mockPhases
-      }))
-    } catch (error) {
-      console.error('Failed to fetch projects:', error)
-      projects.value = []
+      const { data } = await apiClient.get<ProjectResponse[]>('/proyectos/')
+      projects.value = data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al cargar proyectos'
+      console.error('Failed to fetch projects:', err)
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
-  async function fetchProjectById(id: number) {
+  async function fetchProjectById(id: number): Promise<ProjectResponse> {
+    loading.value = true
+    error.value = null
     try {
-      const { data } = await apiClient.get<Project>(`/proyectos/${id}`)
-      const existingProjectIndex = projects.value.findIndex((p: ProjectWithPhases) => p.id === id)
-      const projectWithPhases: ProjectWithPhases = { ...data, phases: mockPhases }
+      const { data } = await apiClient.get<ProjectResponse>(`/proyectos/${id}`)
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al cargar proyecto'
+      console.error(`Failed to fetch project ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
 
-      if (existingProjectIndex !== -1) {
-        projects.value[existingProjectIndex] = projectWithPhases
+  async function fetchProjectWithPhases(id: number): Promise<ProjectWithPhases> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.get<ProjectWithPhases>(`/proyectos/${id}/phases`)
+      currentProject.value = data
+      currentProjectId.value = id
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al cargar proyecto con fases'
+      console.error(`Failed to fetch project with phases ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function createProject(projectData: ProjectCreate): Promise<ProjectResponse> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.post<ProjectResponse>('/proyectos/', projectData)
+
+      // Agregar el nuevo proyecto a la lista (convertir ProjectResponse a ProjectResponse)
+      const newProjectListItem: ProjectResponse = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        status: data.status ?? ProjectStatus.PLANNING,
+        institution: data.institution,
+        research_group: data.research_group,
+        research_type: data.research_type,
+        category: data.category,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      }
+
+      projects.value.unshift(newProjectListItem)
+      return data
+    } catch (err: any) {
+      if (err instanceof ApiValidationError) {
+        const firstError = err.getFirstError()
+        if (firstError) {
+          const message = `${firstError.field}: ${firstError.errorMessage}`
+          error.value = message || 'Error al crear proyecto'
+        }
       } else {
-        projects.value.push(projectWithPhases)
+        error.value = err.response?.data?.detail || 'Error al crear proyecto'
       }
-      setCurrentProjectId(id)
-    } catch (error) {
-      console.error(`Failed to fetch project ${id}:`, error)
+
+      console.error('Failed to create project:', err)
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
-  async function createProject(projectData: ProjectCreatePayload) {
+  async function updateProject(id: number, projectData: ProjectUpdate): Promise<ProjectResponse> {
+    loading.value = true
+    error.value = null
     try {
-      const { data } = await apiClient.post<Project>('/proyectos/', projectData)
-      const newProject: ProjectWithPhases = { ...data, phases: mockPhases }
-      projects.value.unshift(newProject) // Add to the beginning of the list
-    } catch (error) {
-      console.error('Failed to create project:', error)
-      throw error
-    }
-  }
+      const { data } = await apiClient.put<ProjectResponse>(`/proyectos/${id}`, projectData)
 
-  async function updateProject(id: number, projectData: ProjectUpdatePayload) {
-    try {
-      const { data } = await apiClient.put<Project>(`/proyectos/${id}`, projectData)
-      const index = projects.value.findIndex((p: ProjectWithPhases) => p.id === id)
+      // Actualizar en la lista de proyectos
+      const index = projects.value.findIndex(p => p.id === id)
       if (index !== -1) {
-        // Preserve phases
-        const updatedProject: ProjectWithPhases = { ...projects.value[index], ...data }
-        projects.value[index] = updatedProject
+        const updatedProjectListItem: ProjectResponse = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          status: data.status ?? ProjectStatus.PLANNING,
+          institution: data.institution,
+          research_group: data.research_group,
+          research_type: data.research_type,
+          category: data.category,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        }
+        projects.value[index] = updatedProjectListItem
       }
-    } catch (error) {
-      console.error(`Failed to update project ${id}:`, error)
-      throw error
+
+      // Actualizar proyecto actual si es el mismo
+      if (currentProject.value && currentProject.value.id === id) {
+        currentProject.value = { ...currentProject.value, ...data }
+      }
+
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al actualizar proyecto'
+      console.error(`Failed to update project ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
-  async function deleteProject(id: number) {
+  async function deleteProject(id: number): Promise<void> {
+    loading.value = true
+    error.value = null
     try {
       await apiClient.delete(`/proyectos/${id}`)
-      projects.value = projects.value.filter((p: ProjectWithPhases) => p.id !== id)
-    } catch (error) {
-      console.error(`Failed to delete project ${id}:`, error)
-      throw error
+
+      // Remover de la lista
+      projects.value = projects.value.filter(p => p.id !== id)
+
+      // Limpiar proyecto actual si es el mismo
+      if (currentProjectId.value === id) {
+        currentProject.value = null
+        currentProjectId.value = null
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al eliminar proyecto'
+      console.error(`Failed to delete project ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
     }
+  }
+
+  async function uploadProjectDocument(projectId: number, file: File): Promise<AttachmentResponse> {
+    loading.value = true
+    error.value = null
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const { data } = await apiClient.post<AttachmentResponse>(
+        `/proyectos/${projectId}/documentos`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al subir documento'
+      console.error(`Failed to upload document for project ${projectId}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getProjectDocument(projectId: number): Promise<AttachmentResponse | null> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.get<AttachmentResponse | null>(`/proyectos/${projectId}/documentos`)
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al obtener documento'
+      console.error(`Failed to get document for project ${projectId}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function clearCurrentProject() {
+    currentProject.value = null
+    currentProjectId.value = null
   }
 
   return {
+    // State
     projects,
-    currentProjectId,
     currentProject,
-    currentTasks,
-    tasks,
+    currentProjectId,
+    loading,
+    error,
+
+    // Getters
+    projectsCount,
+    projectsByStatus,
+
+    // Actions
     setCurrentProjectId,
-    loadProject,
-    loadProjectTasks,
-    addTask,
-    updateTaskPhase,
-    addContentBlock,
+    clearError,
+    clearCurrentProject,
     fetchProjects,
     fetchProjectById,
+    fetchProjectWithPhases,
     createProject,
     updateProject,
-    deleteProject
+    deleteProject,
+    uploadProjectDocument,
+    getProjectDocument
   }
 })
