@@ -105,7 +105,8 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage.value = ''
   }
 
-  // Temporary function to set error (As long as vee-validate is not used in the registration form)
+  // TODO: Remove this temporary function once vee-validate is integrated in the registration form.
+  // Tracking: See issue #123 (replace with your actual issue/ticket reference)
   function setError(message: string) {
     errorMessage.value = message
   }
