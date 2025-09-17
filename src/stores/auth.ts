@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '../api/client'
-import type { User, UserCreatePayload, TokenResponse, LoginFormData } from '../types'
+import type { User, UserCreate, TokenResponse, LoginFormData } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(payload: UserCreatePayload) {
+  async function register(payload: UserCreate) {
     loading.value = true
     errorMessage.value = ''
 
