@@ -53,18 +53,9 @@
       <!-- Kanban Board -->
       <div class="flex space-x-6 overflow-x-auto pb-6">
         <div class="flex-shrink-0 w-80" v-for="phase in projectsStore.currentProject.phases" :key="phase.id">
-          <PhaseColumn
-            :phase="phase"
-            :tasks="currentTasks"
-            @add-task="handleCreateTask"
-            @task-click="handleTaskClick"
-            @task-edit="handleEditPhase"
-            @task-delete="handleTaskDelete"
-            @delete-phase="handleDeletePhase"
-            @chat-with-lexi="() => { }"
-            @task-drag-start="() => { }"
-            @task-drop="handleMoveTaskToPhase"
-          />
+          <PhaseColumn :phase="phase" :tasks="currentTasks" @add-task="handleCreateTask" @task-click="handleTaskClick"
+            @task-edit="handleEditPhase" @task-delete="handleTaskDelete" @delete-phase="handleDeletePhase"
+            @chat-with-lexi="() => { }" @task-drag-start="() => { }" @task-drop="handleMoveTaskToPhase" />
         </div>
       </div>
     </div>
@@ -265,7 +256,7 @@
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
             Cerrar
           </button>
-          <button @click="showTaskDetailModal = false"
+          <button @click="handleEditTask(selectedTask)"
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
             Guardar Cambios
           </button>
@@ -350,6 +341,7 @@ import {
 import { type PhaseCreate, type TaskResponse, type PhaseResponse, TaskCreate } from '../types'
 import { usePhasesStore } from '../stores/phases'
 import Modal from '../components/ui/Modal.vue'
+import { formatDateToISO, formatISOToDate } from '../lib/dateUtils'
 
 const route = useRoute()
 const projectsStore = useProjectsStore()
@@ -473,8 +465,30 @@ const handleCreateTask = (phaseId: number) => {
   showCreateTaskModal.value = true
 }
 const handleTaskClick = (task: TaskResponse) => {
-  selectedTask.value = task
+  // Crear una copia de la tarea con fechas formateadas para los inputs tipo date
+  selectedTask.value = {
+    ...task,
+    start_date: formatISOToDate(task.start_date),
+    end_date: formatISOToDate(task.end_date)
+  }
   showTaskDetailModal.value = true
+}
+const handleEditTask = async (task: TaskResponse | null) => {
+  if (!task) return
+
+  const updatedTask = await tasksStore.updateTask(task.id, {
+    title: task.title,
+    description: task.description,
+    start_date: formatDateToISO(task.start_date),
+    end_date: formatDateToISO(task.end_date)
+  })
+
+  if (updatedTask.phase_id) {
+    await tasksStore.getTasksByPhase(updatedTask.phase_id)
+  }
+
+  showTaskDetailModal.value = false
+  selectedTask.value = null
 }
 const handleTaskDelete = async (task: TaskResponse) => {
   await tasksStore.deleteTask(task.id)
@@ -484,7 +498,7 @@ const handleTaskDelete = async (task: TaskResponse) => {
   }
 }
 const createTask = async () => {
-  const { title, description, position, phase_id } = newTask.value
+  const { title, description, position, phase_id, start_date, end_date } = newTask.value
 
   if (title == undefined) return
   if (phase_id === undefined) return
@@ -493,7 +507,9 @@ const createTask = async () => {
     title,
     description,
     position,
-    phase_id
+    phase_id,
+    start_date: formatDateToISO(start_date || null),
+    end_date: formatDateToISO(end_date || null)
   }
 
   try {
@@ -506,6 +522,8 @@ const createTask = async () => {
     newTask.value.title = ''
     newTask.value.description = ''
     newTask.value.phase_id = 0
+    newTask.value.start_date = null
+    newTask.value.end_date = null
 
     showCreateTaskModal.value = false
   } catch (err) {
