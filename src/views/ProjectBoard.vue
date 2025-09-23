@@ -56,39 +56,7 @@
         <div class="flex-shrink-0 w-80" v-for="phase in projectsStore.currentProject.phases" :key="phase.id">
           <PhaseColumn :phase="phase" :tasks="currentTasks" @add-task="handleCreateTask" @task-click="handleTaskClick"
             @task-edit="handleEditPhase" @task-delete="handleTaskDelete" @delete-phase="handleDeletePhase"
-            @chat-with-lexi="() => { }" @task-drag-start="() => { }" @task-drop="() => { }" />
-        </div>
-      </div>
-
-      <!-- Empty State - No Phases -->
-      <div v-else class="flex flex-col items-center justify-center py-16 px-4">
-        <div class="text-center max-w-md">
-          <!-- Icon -->
-          <div class="mx-auto flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-6">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-              </path>
-            </svg>
-          </div>
-
-          <!-- Title and description -->
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            No tienes fases creadas
-          </h3>
-          <p class="text-gray-500 mb-8">
-            Las fases te ayudan a organizar tu proyecto en etapas claras. Crea tu primera fase para comenzar.
-          </p>
-
-          <!-- Create phase button -->
-          <button @click="showCreatePhaseModal = true"
-            class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200 shadow-sm">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
-              </path>
-            </svg>
-            Crear Primera Fase
-          </button>
+            @chat-with-lexi="() => { }" @task-drag-start="() => { }" @task-drop="handleMoveTaskToPhase" />
         </div>
       </div>
     </div>
@@ -289,7 +257,7 @@
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
             Cerrar
           </button>
-          <button @click="showTaskDetailModal = false"
+          <button @click="handleEditTask(selectedTask)"
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
             Guardar Cambios
           </button>
@@ -374,6 +342,7 @@ import {
 import { type PhaseCreate, type TaskResponse, type PhaseResponse, TaskCreate } from '../types'
 import { usePhasesStore } from '../stores/phases'
 import Modal from '../components/ui/Modal.vue'
+import { formatDateToISO, formatISOToDate } from '../lib/dateUtils'
 
 const route = useRoute()
 const projectsStore = useProjectsStore()
@@ -497,8 +466,30 @@ const handleCreateTask = (phaseId: number) => {
   showCreateTaskModal.value = true
 }
 const handleTaskClick = (task: TaskResponse) => {
-  selectedTask.value = task
+  // Crear una copia de la tarea con fechas formateadas para los inputs tipo date
+  selectedTask.value = {
+    ...task,
+    start_date: formatISOToDate(task.start_date),
+    end_date: formatISOToDate(task.end_date)
+  }
   showTaskDetailModal.value = true
+}
+const handleEditTask = async (task: TaskResponse | null) => {
+  if (!task) return
+
+  const updatedTask = await tasksStore.updateTask(task.id, {
+    title: task.title,
+    description: task.description,
+    start_date: formatDateToISO(task.start_date),
+    end_date: formatDateToISO(task.end_date)
+  })
+
+  if (updatedTask.phase_id) {
+    await tasksStore.getTasksByPhase(updatedTask.phase_id)
+  }
+
+  showTaskDetailModal.value = false
+  selectedTask.value = null
 }
 const handleTaskDelete = async (task: TaskResponse) => {
   await tasksStore.deleteTask(task.id)
@@ -508,7 +499,7 @@ const handleTaskDelete = async (task: TaskResponse) => {
   }
 }
 const createTask = async () => {
-  const { title, description, position, phase_id } = newTask.value
+  const { title, description, position, phase_id, start_date, end_date } = newTask.value
 
   if (title == undefined) return
   if (phase_id === undefined) return
@@ -517,7 +508,9 @@ const createTask = async () => {
     title,
     description,
     position,
-    phase_id
+    phase_id,
+    start_date: formatDateToISO(start_date || null),
+    end_date: formatDateToISO(end_date || null)
   }
 
   try {
@@ -530,10 +523,23 @@ const createTask = async () => {
     newTask.value.title = ''
     newTask.value.description = ''
     newTask.value.phase_id = 0
+    newTask.value.start_date = null
+    newTask.value.end_date = null
 
     showCreateTaskModal.value = false
   } catch (err) {
     console.error('Error creating task:', err)
+  }
+}
+
+const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, newPhaseId: number }) => {
+  const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
+  if (updatedTask) {
+    // Recargar las tareas de la fase origen y destino
+    if (updatedTask.phase_id) {
+      await tasksStore.getTasksByPhase(updatedTask.phase_id)
+    }
+    await tasksStore.getTasksByPhase(newPhaseId)
   }
 }
 
