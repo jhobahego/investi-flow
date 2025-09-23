@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/vue/24/outline'
@@ -35,9 +35,9 @@ const router = useRouter()
 const searchQuery = ref('')
 
 // Debounced search function
-let debounceTimeout = null
+let debounceTimeout: ReturnType<typeof setTimeout> | null = null
 
-const performSearch = (query) => {
+const performSearch = (query: string) => {
   if (query.trim()) {
     router.push({
       name: 'SearchResults',

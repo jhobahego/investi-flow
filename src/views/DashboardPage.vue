@@ -90,7 +90,13 @@
           </div>
         </div>
 
-        <div v-if="filteredProjects.length === 0" class="text-center py-12">
+        <div v-if="projectsStore.loading" class="max-w-full px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-center h-24">
+            <div class="text-gray-500">Cargando proyectos...</div>
+          </div>
+        </div>
+
+        <div v-else-if="filteredProjects.length === 0" class="text-center py-12">
           <FolderIcon class="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 mb-2">No tienes proyectos aún</h3>
           <p class="text-gray-600 mb-6">Crea tu primer proyecto de investigación y comienza a trabajar con Lexi</p>
@@ -174,7 +180,8 @@ import {
   PlusIcon,
   FolderIcon,
   CheckCircleIcon,
-  UsersIcon
+  UsersIcon,
+  ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()

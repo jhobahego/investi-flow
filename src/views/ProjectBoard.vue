@@ -51,7 +51,8 @@
       </div>
 
       <!-- Kanban Board -->
-      <div class="flex space-x-6 overflow-x-auto pb-6">
+      <div v-if="projectsStore.currentProject.phases && projectsStore.currentProject.phases.length > 0"
+        class="flex space-x-6 overflow-x-auto pb-6">
         <div class="flex-shrink-0 w-80" v-for="phase in projectsStore.currentProject.phases" :key="phase.id">
           <PhaseColumn :phase="phase" :tasks="currentTasks" @add-task="handleCreateTask" @task-click="handleTaskClick"
             @task-edit="handleEditPhase" @task-delete="handleTaskDelete" @delete-phase="handleDeletePhase"
