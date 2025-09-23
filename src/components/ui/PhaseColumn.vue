@@ -50,7 +50,7 @@
 
     <div class="space-y-3 flex-1">
       <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" @click="$emit('task-click', task)"
-        @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)" />
+        @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)" @drag-start="handleStartedDrag" />
 
       <div v-if="tasksInPhase.length === 0"
         class="text-center py-8 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
@@ -122,13 +122,18 @@ const confirmDelete = () => {
   closeMenu()
 }
 
+const handleStartedDrag = (task: TaskResponse) => {
+  emit('task-drag-start', task)
+}
+
 const handleDrop = (event: DragEvent) => {
   event.preventDefault()
-  const taskId = event.dataTransfer?.getData('text/plain')
-  const taskData = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
+  const taskIdRaw = event.dataTransfer?.getData('text/plain')
+  const taskData: TaskResponse = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
 
+  const taskId = taskData.id || (taskIdRaw ? Number(taskIdRaw) : null)
   if (taskData?.phase_id !== props.phase.id) {
-    emit('task-drop', { taskId, newPhaseId: props.phase.id })
+    emit('task-drop', { taskId: Number(taskId), newPhaseId: props.phase.id })
   }
 }
 </script>

@@ -63,7 +63,7 @@
             @delete-phase="handleDeletePhase"
             @chat-with-lexi="() => { }"
             @task-drag-start="() => { }"
-            @task-drop="() => { }"
+            @task-drop="handleMoveTaskToPhase"
           />
         </div>
       </div>
@@ -510,6 +510,17 @@ const createTask = async () => {
     showCreateTaskModal.value = false
   } catch (err) {
     console.error('Error creating task:', err)
+  }
+}
+
+const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, newPhaseId: number }) => {
+  const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
+  if (updatedTask) {
+    // Recargar las tareas de la fase origen y destino
+    if (updatedTask.phase_id) {
+      await tasksStore.getTasksByPhase(updatedTask.phase_id)
+    }
+    await tasksStore.getTasksByPhase(newPhaseId)
   }
 }
 

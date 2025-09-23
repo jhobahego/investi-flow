@@ -167,19 +167,39 @@ export const useTasksStore = defineStore('tasks', () => {
     return await updateTask(taskId, updateData)
   }
 
-  async function moveTaskToPhase(taskId: number, newPhaseId: number): Promise<TaskResponse> {
-    const updateData: TaskUpdate = {
-      // Podríamos necesitar recalcular la posición para la nueva fase
-      // Por ahora, simplemente movemos la tarea
-    }
+  async function moveTaskToPhase(taskId: number, newPhaseId: number): Promise<TaskResponse | undefined> {
+    const newDataToUpdateInTask: { new_phase_id: number; new_position?: number } = { new_phase_id: newPhaseId }
 
     // Primero obtenemos las tareas de la fase destino para calcular la nueva posición
     const targetPhaseTasks = tasksByPhase.value(newPhaseId)
     const newPosition = targetPhaseTasks.length
 
-    updateData.position = newPosition
+    newDataToUpdateInTask.new_position = newPosition
 
-    return await updateTask(taskId, updateData)
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.put<TaskResponse>(`/tareas/${taskId}/mover`, newDataToUpdateInTask)
+
+      // Actualizar en la lista de tareas
+      const index = tasks.value.findIndex(t => t.id === taskId)
+      if (index !== -1) {
+        tasks.value[index] = data
+      }
+
+      // Actualizar tarea actual si es la misma
+      if (currentTask.value && currentTask.value.id === taskId) {
+        currentTask.value = data
+      }
+
+      return data
+    } catch (err: any) {
+      const apiError: ApiError = err.response?.data
+      error.value = apiError.detail || 'Error al mover tarea'
+      console.error(`Failed to move task ${taskId} to phase ${newPhaseId}:`, err)
+    } finally {
+      loading.value = false
+    }
   }
 
   async function updateTaskStatus(taskId: number, status: TaskStatus): Promise<TaskResponse> {
