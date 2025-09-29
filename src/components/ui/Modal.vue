@@ -8,10 +8,16 @@
       <div
         class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
         :class="sizeClasses">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 relative">
+          <!-- Botón de cerrar -->
+          <button @click="$emit('close')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-500 transition-colors" title="Cerrar">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-              <h3 v-if="title" class="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <h3 v-if="title" class="text-lg leading-6 font-medium text-gray-900 mb-4 pr-8">
                 {{ title }}
               </h3>
               <div class="mt-2">
@@ -30,6 +36,7 @@
 
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
+import { XMarkIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
   isOpen: boolean
@@ -41,12 +48,12 @@ interface Emits {
   close: []
 }
 
-const props = withDefaults(defineProps < Props > (), {
+const props = withDefaults(defineProps<Props>(), {
   title: '',
   size: 'md'
 })
 
-const emit = defineEmits < Emits > ()
+const emit = defineEmits<Emits>()
 const $slots = useSlots()
 
 const sizeClasses = computed(() => {
