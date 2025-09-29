@@ -34,6 +34,17 @@
                 </div>
               </button>
 
+              <button @click="openAttachmentModal"
+                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                <div class="flex items-center space-x-2">
+                  <DocumentIcon class="w-4 h-4" />
+                  <span>Gestionar documento</span>
+                  <span v-if="hasPhaseAttachment" class="ml-auto">
+                    <PaperClipIcon class="w-3 h-3 text-gray-400" />
+                  </span>
+                </div>
+              </button>
+
               <button @click="confirmDelete"
                 class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                 <div class="flex items-center space-x-2">
@@ -49,8 +60,9 @@
     </div>
 
     <div class="space-y-3 flex-1">
-      <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" @click="$emit('task-click', task)"
-        @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)" @drag-start="handleStartedDrag" />
+      <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" :has-attachment="hasTaskAttachment(task.id)"
+        @click="$emit('task-click', task)" @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)"
+        @drag-start="handleStartedDrag" />
 
       <div v-if="tasksInPhase.length === 0"
         class="text-center py-8 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
@@ -59,14 +71,24 @@
         <p class="text-xs mt-1">Arrastra una tarea aquí o crea una nueva</p>
       </div>
     </div>
+
+    <!-- Modal de adjuntos de fase -->
+    <Modal :is-open="showAttachmentModal" @close="showAttachmentModal = false" :title="`Documento de ${phase.name}`">
+      <AttachmentUpload entity-type="phase" :entity-id="phase.id"
+        :current-attachment="attachmentsStore.getCachedDocument('phase', phase.id)"
+        @attachment-uploaded="handlePhaseAttachmentChange" @attachment-updated="handlePhaseAttachmentChange" />
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, PropType, ref } from 'vue'
-import { DocumentIcon, EllipsisHorizontalIcon, PencilIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { DocumentIcon, EllipsisHorizontalIcon, PaperClipIcon, PencilIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import TaskCard from './TaskCard.vue'
-import { type TaskResponse, type PhaseResponse } from '../../types'
+import Modal from './Modal.vue'
+import AttachmentUpload from './AttachmentUpload.vue'
+import { type TaskResponse, type PhaseResponse, type AttachmentResponse } from '../../types'
+import { useAttachmentsStore } from '../../stores/attachments'
 
 
 const props = defineProps({
@@ -81,6 +103,8 @@ const props = defineProps({
   }
 })
 
+const attachmentsStore = useAttachmentsStore()
+
 const emit = defineEmits([
   'add-task',
   'task-click',
@@ -93,10 +117,21 @@ const emit = defineEmits([
 ])
 
 const showMenu = ref(false)
+const showAttachmentModal = ref(false)
 
 const tasksInPhase = computed(() =>
   props.tasks.filter(task => task.phase_id === props.phase.id)
 )
+
+const hasTaskAttachment = (taskId: number): boolean => {
+  const attachment = attachmentsStore.getCachedDocument('task', taskId)
+  return attachment !== null && attachment !== undefined
+}
+
+const hasPhaseAttachment = computed(() => {
+  const attachment = attachmentsStore.getCachedDocument('phase', props.phase.id)
+  return attachment !== null && attachment !== undefined
+})
 
 const toggleMenu = () => {
   showMenu.value = !showMenu.value
@@ -115,6 +150,16 @@ const editPhase = () => {
   // Implementar lógica de edición
   emit('task-edit', props.phase)
   closeMenu()
+}
+
+const openAttachmentModal = () => {
+  showAttachmentModal.value = true
+  closeMenu()
+}
+
+const handlePhaseAttachmentChange = (attachment: AttachmentResponse) => {
+  // La actualización se maneja automáticamente a través del store
+  console.log('Documento de fase actualizado:', attachment)
 }
 
 const confirmDelete = () => {
