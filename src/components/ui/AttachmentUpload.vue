@@ -57,9 +57,11 @@
 
         <div class="flex items-center space-x-2">
           <!-- Botón descargar -->
-          <button type="button" class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            title="Descargar documento (funcionalidad en desarrollo)" @click="downloadDocument" disabled>
-            <ArrowDownTrayIcon class="w-4 h-4" />
+          <button type="button" class="p-2 transition-colors"
+            :class="isDownloading ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700'"
+            :title="isDownloading ? 'Descargando...' : 'Descargar documento'" @click="downloadDocument"
+            :disabled="isDownloading">
+            <ArrowDownTrayIcon class="w-4 h-4" :class="{ 'animate-bounce': isDownloading }" />
           </button>
 
           <!-- Botón visualizar (sin funcionalidad por ahora) -->
@@ -102,8 +104,7 @@ import {
   formatFileSize,
   getFileIcon,
   getFileTypeColor,
-  truncateFileName,
-  getDownloadUrl
+  truncateFileName
 } from '../../lib/attachmentUtils'
 import {
   DocumentPlusIcon,
@@ -136,6 +137,7 @@ const replaceFileInput = ref<HTMLInputElement>()
 const isDragOver = ref(false)
 const dragCounter = ref(0)
 const error = ref<string | null>(null)
+const isDownloading = ref(false)
 
 // Computed
 const loading = computed(() => attachmentsStore.loading)
@@ -250,12 +252,24 @@ function handleDrop(event: DragEvent) {
   }
 }
 
-function downloadDocument() {
-  if (!props.currentAttachment) return
+async function downloadDocument() {
+  if (!props.currentAttachment || isDownloading.value) return
 
-  // Abrir en nueva ventana para descargar
-  const downloadUrl = getDownloadUrl(props.currentAttachment.file_path)
-  window.open(downloadUrl, '_blank')
+  isDownloading.value = true
+  clearError()
+
+  try {
+    await attachmentsStore.downloadDocument(
+      props.entityType,
+      props.entityId,
+      props.currentAttachment.file_name
+    )
+  } catch (err: any) {
+    error.value = err.message || 'Error al descargar el documento'
+    console.error('Error downloading document:', err)
+  } finally {
+    isDownloading.value = false
+  }
 }
 
 function viewDocument() {

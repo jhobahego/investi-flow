@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient, { ApiValidationError } from '../api/client'
-import type { AttachmentResponse } from '../types'
+import type { ApiError, AttachmentResponse } from '../types'
 
 export const useAttachmentsStore = defineStore('attachments', () => {
   const loading = ref(false)
@@ -136,6 +136,68 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     return attachments.value[cacheKey]
   }
 
+  async function downloadDocument(
+    entityType: 'project' | 'phase' | 'task',
+    entityId: number,
+    fileName?: string
+  ): Promise<void> {
+    try {
+      let endpoint = ''
+      switch (entityType) {
+        case 'project':
+          endpoint = `/proyectos/${entityId}/descargar-documento`
+          break
+        case 'phase':
+          endpoint = `/fases/${entityId}/descargar-documento`
+          break
+        case 'task':
+          endpoint = `/tareas/${entityId}/descargar-documento`
+          break
+      }
+
+      const response = await apiClient.get(endpoint, {
+        responseType: 'blob'
+      })
+
+      // Obtener el nombre del archivo desde el header Content-Disposition
+      const contentDisposition = response.headers['content-disposition']
+      let downloadFileName = fileName || 'documento.pdf'
+      
+      if (contentDisposition) {
+        // Intentar extraer el nombre del archivo desde el header
+        // Buscar primero filename* (RFC 5987 con encoding UTF-8)
+        const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''(.+?)(?:;|$)/)
+        if (filenameStarMatch) {
+          downloadFileName = decodeURIComponent(filenameStarMatch[1])
+        } else {
+          // Fallback a filename normal
+          const filenameMatch = contentDisposition.match(/filename="?(.+?)"?(?:;|$)/)
+          if (filenameMatch) {
+            downloadFileName = filenameMatch[1]
+          }
+        }
+      }
+
+      // Crear un objeto URL para el blob y descargarlo
+      const blob = new Blob([response.data])
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = downloadFileName
+      document.body.appendChild(link)
+      link.click()
+      
+      // Limpiar
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      const apiError: ApiError = err.response.data
+      error.value = apiError.detail || 'Error al descargar documento'
+      console.error(`Failed to download document for ${entityType} ${entityId}:`, err)
+      throw err
+    }
+  }
+
   return {
     // State
     loading,
@@ -146,6 +208,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     clearError,
     uploadDocument,
     getDocument,
+    downloadDocument,
     clearCache,
     getCachedDocument
   }
