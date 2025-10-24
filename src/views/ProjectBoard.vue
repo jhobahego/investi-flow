@@ -4,8 +4,17 @@
 
     <!-- Loading State -->
     <div v-if="projectsStore.loading" class="max-w-full px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex items-center justify-center h-64">
-        <div class="text-gray-500">Cargando proyecto...</div>
+      <div class="mb-6">
+        <div class="animate-pulse flex items-center space-x-4">
+          <div class="h-8 w-8 bg-gray-200 rounded"></div>
+          <div class="flex-1">
+            <div class="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex space-x-6 overflow-x-auto pb-6">
+        <SkeletonLoader type="phase-column" :count="3" />
       </div>
     </div>
 
@@ -309,9 +318,16 @@
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
             Cerrar
           </button>
-          <button @click="handleEditTask(selectedTask)"
-            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
-            Guardar Cambios
+          <button @click="handleEditTask(selectedTask)" :disabled="tasksStore.loading"
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]">
+            <span v-if="!tasksStore.loading">Guardar Cambios</span>
+            <span v-else class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Guardando...
+            </span>
           </button>
         </div>
       </template>
@@ -375,8 +391,15 @@
           Cancelar
         </button>
         <button type="submit" @click="createTask" :disabled="tasksStore.loading"
-          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-          Crear Tarea
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]">
+          <span v-if="!tasksStore.loading">Crear Tarea</span>
+          <span v-else class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Creando...
+          </span>
         </button>
       </template>
 
@@ -394,9 +417,11 @@ import { useRoute } from 'vue-router'
 import { useProjectsStore } from '../stores/projects'
 import { useTasksStore } from '../stores/tasks'
 import { useAttachmentsStore } from '../stores/attachments'
+import { useToast } from '../composables/useToast'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import PhaseColumn from '../components/ui/PhaseColumn.vue'
 import AttachmentUpload from '../components/ui/AttachmentUpload.vue'
+import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import {
   ArrowLeftIcon,
   UserPlusIcon,
@@ -414,6 +439,7 @@ const projectsStore = useProjectsStore()
 const phaseStore = usePhasesStore()
 const tasksStore = useTasksStore()
 const attachmentsStore = useAttachmentsStore()
+const { showSuccess, showError } = useToast()
 
 // Estados reactivos
 const showTaskDetailModal = ref(false)
@@ -455,15 +481,15 @@ const handleCreatePhase = async () => {
 
   try {
     await phaseStore.createPhase(newPhase.value)
+    showSuccess('Fase creada exitosamente')
 
-    // Recargar el proyecto para obtener las fases actualizadas
     await loadProject()
 
-    // Resetear formulario y cerrar modal
     newPhase.value = { name: '', project_id: 0, position: 0, color: null }
     showCreatePhaseModal.value = false
   } catch (err) {
     console.error('Error creating phase:', err)
+    showError('Error al crear la fase. Intenta nuevamente.')
   }
 }
 
@@ -483,14 +509,14 @@ const updatePhase = async () => {
       position,
       color
     })
+    showSuccess('Fase actualizada exitosamente')
 
-    // Recargar el proyecto para obtener las fases actualizadas
     await loadProject()
 
-    // Cerrar modal
     showEditPhaseModal.value = false
   } catch (err) {
     console.error('Error updating phase:', err)
+    showError('Error al actualizar la fase. Intenta nuevamente.')
   }
 }
 
@@ -504,16 +530,15 @@ const confirmDeletePhase = async () => {
 
   try {
     await phaseStore.deletePhase(phaseToDelete.value.id)
+    showSuccess('Fase eliminada exitosamente')
 
-    // Recargar el proyecto para obtener las fases actualizadas
     await loadProject()
 
-    // Cerrar modal y limpiar estado
     showDeletePhaseModal.value = false
     phaseToDelete.value = null
   } catch (err) {
     console.error('Error deleting phase:', err)
-    // El error ya se maneja en el store, aquí podríamos mostrar una notificación
+    showError('Error al eliminar la fase. Intenta nuevamente.')
   }
 }
 
@@ -547,25 +572,38 @@ const handleTaskClick = (task: TaskResponse) => {
 const handleEditTask = async (task: TaskResponse | null) => {
   if (!task) return
 
-  const updatedTask = await tasksStore.updateTask(task.id, {
-    title: task.title,
-    description: task.description,
-    start_date: formatDateToISO(task.start_date),
-    end_date: formatDateToISO(task.end_date)
-  })
+  try {
+    const updatedTask = await tasksStore.updateTask(task.id, {
+      title: task.title,
+      description: task.description,
+      start_date: formatDateToISO(task.start_date),
+      end_date: formatDateToISO(task.end_date)
+    })
 
-  if (updatedTask.phase_id) {
-    await tasksStore.getTasksByPhase(updatedTask.phase_id)
+    if (updatedTask.phase_id) {
+      await tasksStore.getTasksByPhase(updatedTask.phase_id)
+    }
+
+    showSuccess('Tarea actualizada exitosamente')
+    showTaskDetailModal.value = false
+    selectedTask.value = null
+  } catch (err) {
+    console.error('Error updating task:', err)
+    showError('Error al actualizar la tarea. Intenta nuevamente.')
   }
-
-  showTaskDetailModal.value = false
-  selectedTask.value = null
 }
 const handleTaskDelete = async (task: TaskResponse) => {
-  await tasksStore.deleteTask(task.id)
+  try {
+    await tasksStore.deleteTask(task.id)
 
-  if (task.phase_id) {
-    await tasksStore.getTasksByPhase(task.phase_id)
+    if (task.phase_id) {
+      await tasksStore.getTasksByPhase(task.phase_id)
+    }
+
+    showSuccess('Tarea eliminada exitosamente')
+  } catch (err) {
+    console.error('Error deleting task:', err)
+    showError('Error al eliminar la tarea. Intenta nuevamente.')
   }
 }
 const createTask = async () => {
@@ -586,10 +624,10 @@ const createTask = async () => {
   try {
     const data = await tasksStore.createTask(taskData)
 
-    // Recargar las tareas de la fase correspondiente
     await tasksStore.getTasksByPhase(data.phase_id)
 
-    // Resetear formulario y cerrar modal
+    showSuccess('Tarea creada exitosamente')
+
     newTask.value.title = ''
     newTask.value.description = ''
     newTask.value.phase_id = 0
@@ -599,17 +637,23 @@ const createTask = async () => {
     showCreateTaskModal.value = false
   } catch (err) {
     console.error('Error creating task:', err)
+    showError('Error al crear la tarea. Intenta nuevamente.')
   }
 }
 
 const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, newPhaseId: number }) => {
-  const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
-  if (updatedTask) {
-    // Recargar las tareas de la fase origen y destino
-    if (updatedTask.phase_id) {
-      await tasksStore.getTasksByPhase(updatedTask.phase_id)
+  try {
+    const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
+    if (updatedTask) {
+      if (updatedTask.phase_id) {
+        await tasksStore.getTasksByPhase(updatedTask.phase_id)
+      }
+      await tasksStore.getTasksByPhase(newPhaseId)
+      showSuccess('Tarea movida exitosamente')
     }
-    await tasksStore.getTasksByPhase(newPhaseId)
+  } catch (err) {
+    console.error('Error moving task:', err)
+    showError('Error al mover la tarea. Intenta nuevamente.')
   }
 }
 

@@ -99,9 +99,11 @@
 import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { showSuccess, showError } = useToast()
 
 const form = reactive({
   email: '',
@@ -110,11 +112,16 @@ const form = reactive({
 
 const handleLogin = async () => {
   authStore.clearError()
-  
-  await authStore.login({
-    email: form.email,
-    password: form.password
-  })
+
+  try {
+    await authStore.login({
+      email: form.email,
+      password: form.password
+    })
+    showSuccess('Inicio de sesión exitoso')
+  } catch (error) {
+    showError('Error al iniciar sesión. Verifica tus credenciales.')
+  }
 }
 
 onMounted(() => {

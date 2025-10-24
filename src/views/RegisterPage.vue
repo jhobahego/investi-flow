@@ -184,9 +184,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { showSuccess, showError } = useToast()
 
 const error = ref('')
 
@@ -222,22 +224,23 @@ const handleRegister = async () => {
     return
   }
 
-  const result = await authStore.register({
-    email: form.email,
-    full_name: form.full_name,
-    password: form.password,
-    phone_number: form.phone_number,
-    university: form.university || undefined,
-    research_group: form.research_group || undefined,
-    career: form.career || undefined
-  })
-
-  if (result.success) {
-    // Redirigir al login tras registro exitoso
-    router.push({
-      name: 'Login',
-      query: { message: 'Registro exitoso. Ahora puedes iniciar sesión.' }
+  try {
+    const result = await authStore.register({
+      email: form.email,
+      full_name: form.full_name,
+      password: form.password,
+      phone_number: form.phone_number,
+      university: form.university || undefined,
+      research_group: form.research_group || undefined,
+      career: form.career || undefined
     })
+
+    if (result.success) {
+      showSuccess('Registro exitoso. Ahora puedes iniciar sesión.')
+      router.push({ name: 'Login' })
+    }
+  } catch (err) {
+    showError('Error al registrarse. Intenta nuevamente.')
   }
 }
 
