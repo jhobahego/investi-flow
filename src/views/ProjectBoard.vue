@@ -51,6 +51,25 @@
             <button class="text-gray-500 hover:text-gray-700 transition-colors">
               <UserPlusIcon class="w-5 h-5" />
             </button>
+            <button @click="navigateToChat"
+              class="px-4 py-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                </path>
+              </svg>
+              <span>Chat con Lexi</span>
+            </button>
+            <button @click="showProjectAttachmentModal = true"
+              class="px-4 py-2 rounded-md transition-colors flex items-center space-x-2" :class="projectDocument
+                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+              :title="projectDocument ? 'Ver documento principal' : 'Adjuntar documento principal'">
+              <DocumentTextIcon class="w-4 h-4" />
+              <span v-if="projectDocument">Documento</span>
+              <span v-else>Adjuntar</span>
+              <PaperClipIcon v-if="projectDocument" class="w-3 h-3" />
+            </button>
             <button @click="showCreatePhaseModal = true"
               class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors">
               Crear Fase
@@ -251,6 +270,16 @@
           <input v-model="selectedTask.end_date" type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
         </div>
+
+        <!-- Sección de Adjuntos -->
+        <div class="border-t border-gray-200 pt-4">
+          <label class="block text-sm font-medium text-gray-700 mb-3">
+            Documento de la Tarea
+          </label>
+          <AttachmentUpload v-if="selectedTask" entity-type="task" :entity-id="selectedTask.id"
+            :current-attachment="getTaskDocument(selectedTask.id)" @attachment-uploaded="handleTaskDocumentUploaded"
+            @attachment-updated="handleTaskDocumentUpdated" />
+        </div>
       </div>
 
       <!-- <div> <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -302,9 +331,12 @@
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]">
             <span v-if="!tasksStore.loading">Guardar Cambios</span>
             <span v-else class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
               </svg>
               Guardando...
             </span>
@@ -312,6 +344,15 @@
         </div>
       </template>
     </Modal>
+
+    <!-- Modal de Adjuntos del Proyecto -->
+    <Modal :is-open="showProjectAttachmentModal" @close="showProjectAttachmentModal = false"
+      title="Documento Principal del Proyecto">
+      <AttachmentUpload v-if="projectsStore.currentProject" entity-type="project"
+        :entity-id="projectsStore.currentProject.id" :current-attachment="projectDocument"
+        @attachment-uploaded="handleProjectDocumentUploaded" @attachment-updated="handleProjectDocumentUpdated" />
+    </Modal>
+
     <!-- Create Task Modal -->
     <Modal :is-open="showCreateTaskModal" @close="showCreateTaskModal = false" title="Crear Nueva Tarea">
       <form @submit.prevent="createTask" class="space-y-4">
@@ -365,9 +406,12 @@
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]">
           <span v-if="!tasksStore.loading">Crear Tarea</span>
           <span v-else class="flex items-center">
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
             </svg>
             Creando...
           </span>
@@ -384,27 +428,33 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../stores/projects'
 import { useTasksStore } from '../stores/tasks'
+import { useAttachmentsStore } from '../stores/attachments'
 import { useToast } from '../composables/useToast'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import PhaseColumn from '../components/ui/PhaseColumn.vue'
+import AttachmentUpload from '../components/ui/AttachmentUpload.vue'
 import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import {
   ArrowLeftIcon,
   UserPlusIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentTextIcon,
+  PaperClipIcon
 } from '@heroicons/vue/24/outline'
-import { type PhaseCreate, type TaskResponse, type PhaseResponse, TaskCreate } from '../types'
+import { type PhaseCreate, type TaskResponse, type PhaseResponse, TaskCreate, type AttachmentResponse } from '../types'
 import { usePhasesStore } from '../stores/phases'
 import Modal from '../components/ui/Modal.vue'
 import { formatDateToISO, formatISOToDate } from '../lib/dateUtils'
 
 const route = useRoute()
+const router = useRouter()
 const projectsStore = useProjectsStore()
 const phaseStore = usePhasesStore()
 const tasksStore = useTasksStore()
+const attachmentsStore = useAttachmentsStore()
 const { showSuccess, showError } = useToast()
 
 // Estados reactivos
@@ -413,6 +463,7 @@ const showCreateTaskModal = ref(false)
 const showCreatePhaseModal = ref(false)
 const showEditPhaseModal = ref(false)
 const showDeletePhaseModal = ref(false)
+const showProjectAttachmentModal = ref(false)
 const selectedTask = ref<TaskResponse | null>(null)
 const phaseToDelete = ref<PhaseResponse | null>(null)
 
@@ -428,6 +479,9 @@ const editPhase = ref<Partial<PhaseResponse>>({
   position: 0,
   color: null
 })
+
+// Estado para adjuntos
+const projectDocument = ref<AttachmentResponse | null>(null)
 
 // Obtener todas las tareas del proyecto actual
 const currentTasks = computed(() => tasksStore.tasks)
@@ -619,6 +673,33 @@ const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, n
   }
 }
 
+// Funciones para adjuntos
+const handleProjectDocumentUploaded = (attachment: AttachmentResponse) => {
+  projectDocument.value = attachment
+}
+
+const handleProjectDocumentUpdated = (attachment: AttachmentResponse) => {
+  projectDocument.value = attachment
+}
+
+const handleTaskDocumentUploaded = (attachment: AttachmentResponse) => {
+  // La tarea se actualiza automáticamente a través del store
+  console.log('Documento de tarea subido:', attachment)
+}
+
+const handleTaskDocumentUpdated = (attachment: AttachmentResponse) => {
+  // La tarea se actualiza automáticamente a través del store
+  console.log('Documento de tarea actualizado:', attachment)
+}
+
+const getTaskDocument = (taskId: number): AttachmentResponse | null => {
+  return attachmentsStore.getCachedDocument('task', taskId) || null
+}
+
+const navigateToChat = () => {
+  router.push(`/project/${route.params.id}/chat`)
+}
+
 // Función para cargar el proyecto
 const loadProject = async () => {
   try {
@@ -638,6 +719,14 @@ const loadProject = async () => {
       for (const phase of data.phases) {
         await tasksStore.getTasksByPhase(phase.id)
       }
+    }
+
+    // Cargar documento del proyecto
+    try {
+      projectDocument.value = await attachmentsStore.getDocument('project', data.id)
+    } catch (err) {
+      // Ignorar error si no hay documento (404)
+      console.log('No document found for project:', data.id)
     }
   } catch (err: any) {
     console.error('Error loading project:', err)

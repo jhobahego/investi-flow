@@ -199,6 +199,63 @@ export interface AttachmentResponse {
   updated_at: string
 }
 
+// --- CONVERSATION & CHAT TYPES ---
+export interface ChatMessage {
+  id?: number
+  role: 'user' | 'model'
+  content: string
+  model_used?: string | null
+  created_at?: string
+}
+
+export interface Conversation {
+  id: number
+  title: string
+  project_id: number
+  user_id: number
+  created_at: string
+  updated_at: string
+  messages: ChatMessage[]
+}
+
+export interface ConversationListItem {
+  id: number
+  title: string
+  project_id: number
+  user_id: number
+  created_at: string
+  updated_at: string
+  message_count: number
+  last_message_preview: string | null
+}
+
+export interface ChatRequest {
+  message: string
+  conversation_id?: number | null
+  title?: string | null
+}
+
+export interface ChatResponse {
+  response: string
+  model_used: string
+  conversation_id: number
+  message_id: number
+}
+
+// --- ATTACHMENT TYPES ---
+export interface AttachmentResponse {
+  id: number
+  file_name: string
+  file_type: FileType
+  file_size: number
+  file_path: string
+  project_id: number | null
+  phase_id: number | null
+  task_id: number | null
+  created_at: string
+  updated_at: string
+}
+
 // --- COMPOSITE TYPES FOR FRONTEND ---
 export interface ProjectWithPhases extends ProjectResponse {
   phases: PhaseResponse[]
