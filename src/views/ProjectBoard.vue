@@ -497,12 +497,16 @@ const handleCreatePhase = async () => {
 
   try {
     await phaseStore.createPhase(newPhase.value)
-    showSuccess('Fase creada exitosamente')
 
-    await loadProject()
-
+    // Cerrar modal inmediatamente
     newPhase.value = { name: '', project_id: 0, position: 0, color: null }
     showCreatePhaseModal.value = false
+
+    // Mostrar notificación de éxito
+    showSuccess('Fase creada exitosamente')
+
+    // Recargar proyecto en segundo plano
+    await loadProject()
   } catch (err) {
     console.error('Error creating phase:', err)
     showError('Error al crear la fase. Intenta nuevamente.')
@@ -525,11 +529,15 @@ const updatePhase = async () => {
       position,
       color
     })
+
+    // Cerrar modal inmediatamente
+    showEditPhaseModal.value = false
+
+    // Mostrar notificación de éxito
     showSuccess('Fase actualizada exitosamente')
 
+    // Recargar proyecto en segundo plano
     await loadProject()
-
-    showEditPhaseModal.value = false
   } catch (err) {
     console.error('Error updating phase:', err)
     showError('Error al actualizar la fase. Intenta nuevamente.')
@@ -546,12 +554,16 @@ const confirmDeletePhase = async () => {
 
   try {
     await phaseStore.deletePhase(phaseToDelete.value.id)
-    showSuccess('Fase eliminada exitosamente')
 
-    await loadProject()
-
+    // Cerrar modal inmediatamente
     showDeletePhaseModal.value = false
     phaseToDelete.value = null
+
+    // Mostrar notificación de éxito
+    showSuccess('Fase eliminada exitosamente')
+
+    // Recargar proyecto en segundo plano
+    await loadProject()
   } catch (err) {
     console.error('Error deleting phase:', err)
     showError('Error al eliminar la fase. Intenta nuevamente.')
@@ -596,13 +608,17 @@ const handleEditTask = async (task: TaskResponse | null) => {
       end_date: formatDateToISO(task.end_date)
     })
 
+    // Cerrar modal inmediatamente
+    showTaskDetailModal.value = false
+    selectedTask.value = null
+
+    // Mostrar notificación de éxito
+    showSuccess('Tarea actualizada exitosamente')
+
+    // Recargar tareas en segundo plano
     if (updatedTask.phase_id) {
       await tasksStore.getTasksByPhase(updatedTask.phase_id)
     }
-
-    showSuccess('Tarea actualizada exitosamente')
-    showTaskDetailModal.value = false
-    selectedTask.value = null
   } catch (err) {
     console.error('Error updating task:', err)
     showError('Error al actualizar la tarea. Intenta nuevamente.')
@@ -612,11 +628,13 @@ const handleTaskDelete = async (task: TaskResponse) => {
   try {
     await tasksStore.deleteTask(task.id)
 
+    // Mostrar notificación de éxito
+    showSuccess('Tarea eliminada exitosamente')
+
+    // Recargar tareas en segundo plano
     if (task.phase_id) {
       await tasksStore.getTasksByPhase(task.phase_id)
     }
-
-    showSuccess('Tarea eliminada exitosamente')
   } catch (err) {
     console.error('Error deleting task:', err)
     showError('Error al eliminar la tarea. Intenta nuevamente.')
@@ -640,17 +658,19 @@ const createTask = async () => {
   try {
     const data = await tasksStore.createTask(taskData)
 
-    await tasksStore.getTasksByPhase(data.phase_id)
-
-    showSuccess('Tarea creada exitosamente')
-
+    // Cerrar modal inmediatamente
     newTask.value.title = ''
     newTask.value.description = ''
     newTask.value.phase_id = 0
     newTask.value.start_date = null
     newTask.value.end_date = null
-
     showCreateTaskModal.value = false
+
+    // Mostrar notificación de éxito
+    showSuccess('Tarea creada exitosamente')
+
+    // Recargar tareas en segundo plano
+    await tasksStore.getTasksByPhase(data.phase_id)
   } catch (err) {
     console.error('Error creating task:', err)
     showError('Error al crear la tarea. Intenta nuevamente.')
