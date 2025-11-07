@@ -197,8 +197,6 @@ const totalPages = ref(1)
 const pageInputValue = ref(1)
 const showAllPages = ref(false)
 
-// Contenido por página (guardamos el HTML de cada página)
-const pagesData = ref<string[]>([])
 const CHARS_PER_PAGE = 3000 // Aproximadamente 3000 caracteres por página
 
 // Editor instance
