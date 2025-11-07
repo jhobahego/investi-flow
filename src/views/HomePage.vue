@@ -13,24 +13,69 @@
             </span>
             con IA
           </h1>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-            InvestiFlow te ayuda a organizar, desarrollar y colaborar en proyectos de investigación 
-            con la asistencia inteligente de Lexi, tu compañera de IA especializada en metodología científica.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <router-link 
-              to="/register"
-              class="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              Comenzar Gratis
-            </router-link>
-            <router-link 
-              to="/login"
-              class="bg-white hover:bg-gray-50 text-primary-600 px-8 py-3 rounded-lg font-semibold border-2 border-primary-600 transition-all duration-300"
-            >
-              Iniciar Sesión
-            </router-link>
-          </div>
+          
+          <!-- Contenido cuando NO está autenticado -->
+          <template v-if="!isAuthenticated">
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+              InvestiFlow te ayuda a organizar, desarrollar y colaborar en proyectos de investigación 
+              con la asistencia inteligente de Lexi, tu compañera de IA especializada en metodología científica.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+              <router-link 
+                to="/register"
+                class="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                Comenzar Gratis
+              </router-link>
+              <router-link 
+                to="/login"
+                class="bg-white hover:bg-gray-50 text-primary-600 px-8 py-3 rounded-lg font-semibold border-2 border-primary-600 transition-all duration-300"
+              >
+                Iniciar Sesión
+              </router-link>
+            </div>
+          </template>
+          
+          <!-- Contenido cuando SÍ está autenticado -->
+          <template v-else>
+            <div class="max-w-3xl mx-auto mb-8">
+              <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-primary-100">
+                <div class="flex items-center justify-center mb-4">
+                  <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold text-2xl">
+                      {{ user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}
+                    </span>
+                  </div>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                  ¡Bienvenido de vuelta, {{ user?.full_name?.split(' ')[0] || 'Usuario' }}!
+                </h2>
+                <p class="text-lg text-gray-600 mb-6">
+                  Continúa trabajando en tus proyectos de investigación con la ayuda de Lexi
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                  <router-link 
+                    to="/dashboard"
+                    class="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center justify-center"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Ver Mis Proyectos
+                  </router-link>
+                  <a 
+                    href="#features"
+                    class="bg-white hover:bg-gray-50 text-primary-600 px-8 py-3 rounded-lg font-semibold border-2 border-primary-600 transition-all duration-300 inline-flex items-center justify-center"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Conocer Más
+                  </a>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
       
@@ -44,7 +89,7 @@
     </section>
     
     <!-- Features Section -->
-    <section class="py-20 bg-white">
+    <section id="features" class="py-20 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
           <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
@@ -316,7 +361,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import AppNavbar from '../components/layout/AppNavbar.vue'
+import { useAuthStore } from '../stores/auth'
 import { 
   LightBulbIcon, 
   DocumentTextIcon, 
@@ -326,4 +373,8 @@ import {
   SparklesIcon,
   CheckCircleIcon 
 } from '@heroicons/vue/24/outline'
+
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const user = computed(() => authStore.user)
 </script>
