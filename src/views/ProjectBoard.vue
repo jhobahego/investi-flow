@@ -36,43 +36,50 @@
     <div class="max-w-full px-4 sm:px-6 lg:px-8 py-6" v-else-if="projectsStore.currentProject">
       <!-- Project Header -->
       <div class="mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-4">
+          <!-- Título y botón volver -->
           <div class="flex items-center space-x-4">
-            <button @click="$router.push('/dashboard')" class="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+            <button @click="$router.push('/dashboard')"
+              class="p-2 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0">
               <ArrowLeftIcon class="w-5 h-5" />
             </button>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">{{ projectsStore.currentProject.name }}</h1>
-              <p class="text-gray-600">{{ projectsStore.currentProject.description }}</p>
+            <div class="min-w-0 flex-1">
+              <h1 class="text-xl sm:text-2xl font-bold text-gray-900 truncate">{{ projectsStore.currentProject.name }}
+              </h1>
+              <p class="text-sm sm:text-base text-gray-600 truncate">{{ projectsStore.currentProject.description }}</p>
             </div>
           </div>
 
-          <div class="flex items-center space-x-4">
-            <button class="text-gray-500 hover:text-gray-700 transition-colors">
+          <!-- Botones de acción -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              class="text-gray-500 hover:text-gray-700 transition-colors p-2 sm:px-3 sm:py-2 rounded-md hover:bg-gray-100">
               <UserPlusIcon class="w-5 h-5" />
             </button>
             <button @click="navigateToChat"
-              class="px-4 py-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors flex items-center space-x-2">
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors flex items-center justify-center space-x-2 text-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
                 </path>
               </svg>
-              <span>Chat con Lexi</span>
+              <span class="hidden sm:inline">Chat con Lexi</span>
+              <span class="sm:hidden">Chat</span>
             </button>
             <button @click="showProjectAttachmentModal = true"
-              class="px-4 py-2 rounded-md transition-colors flex items-center space-x-2" :class="projectDocument
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center justify-center space-x-2 text-sm"
+              :class="projectDocument
                 ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
               :title="projectDocument ? 'Ver documento principal' : 'Adjuntar documento principal'">
               <DocumentTextIcon class="w-4 h-4" />
-              <span v-if="projectDocument">Documento</span>
-              <span v-else>Adjuntar</span>
+              <span class="hidden sm:inline">{{ projectDocument ? 'Documento' : 'Adjuntar' }}</span>
               <PaperClipIcon v-if="projectDocument" class="w-3 h-3" />
             </button>
             <button @click="showCreatePhaseModal = true"
-              class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors">
-              Crear Fase
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors text-sm whitespace-nowrap">
+              <span class="hidden sm:inline">Crear Fase</span>
+              <span class="sm:hidden">+ Fase</span>
             </button>
           </div>
         </div>

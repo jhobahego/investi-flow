@@ -7,6 +7,7 @@ import type { User, UserCreate, TokenResponse, LoginFormData } from '../types'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('accessToken'))
+  const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
   const loading = ref(false)
   const errorMessage = ref('')
   const router = useRouter()
@@ -15,16 +16,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuthData(
     userData: User | null,
-    accessToken: string | null
+    accessToken: string | null,
+    refreshTokenValue: string | null = null
   ) {
     user.value = userData
     token.value = accessToken
+    refreshToken.value = refreshTokenValue
+    
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken)
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
     } else {
       localStorage.removeItem('accessToken')
       delete apiClient.defaults.headers.common['Authorization']
+    }
+    
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue)
+    } else {
+      localStorage.removeItem('refreshToken')
     }
   }
 
@@ -34,11 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       await apiClient.post('/auth/register', payload)
-      return { success: true }
     } catch (error) {
       console.error('Registration error:', error)
       errorMessage.value = error instanceof Error ? error.message : 'Error al registrar la cuenta. Por favor, intenta nuevamente.'
-      return { success: false }
+      throw error
     } finally {
       loading.value = false
     }
@@ -62,23 +71,51 @@ export const useAuthStore = defineStore('auth', () => {
           }
         }
       )
-      setAuthData(null, data.access_token)
+      setAuthData(null, data.access_token, data.refresh_token)
       await fetchUser()
       router.push({ name: 'Dashboard' })
-      return { success: true }
     } catch (error) {
       console.error('Login error:', error)
-      setAuthData(null, null)
+      setAuthData(null, null, null)
       errorMessage.value = error instanceof Error ? error.message : 'Error al iniciar sesión. Por favor, intenta nuevamente.'
-      return { success: false }
+      throw error
     } finally {
       loading.value = false
     }
   }
 
   async function logout() {
-    setAuthData(null, null)
+    setAuthData(null, null, null)
     router.push({ name: 'Login' })
+  }
+
+  async function refreshAccessToken(): Promise<boolean> {
+    if (!refreshToken.value) {
+      return false
+    }
+
+    try {
+      // Usar el refresh token en el header Authorization
+      const { data } = await apiClient.post<TokenResponse>(
+        '/auth/refresh',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${refreshToken.value}`
+          }
+        }
+      )
+      
+      // Actualizar los tokens
+      setAuthData(user.value, data.access_token, data.refresh_token)
+      return true
+    } catch (error) {
+      console.error('Failed to refresh token:', error)
+      // Si falla el refresh, limpiar todo y redirigir al login
+      setAuthData(null, null, null)
+      router.push({ name: 'Login' })
+      return false
+    }
   }
 
   async function fetchUser() {
@@ -91,7 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.error('Failed to fetch user:', error)
       // If fetching user fails, token might be invalid
-      setAuthData(null, null)
+      setAuthData(null, null, null)
     }
   }
 
@@ -114,12 +151,14 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     token,
+    refreshToken,
     loading,
     errorMessage,
     isAuthenticated,
     register,
     login,
     logout,
+    refreshAccessToken,
     checkAuth,
     fetchUser,
     clearError,
