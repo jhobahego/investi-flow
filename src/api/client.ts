@@ -86,7 +86,7 @@ apiClient.interceptors.request.use(
 /**
  * Función para intentar refrescar el token
  */
-async function attemptTokenRefresh(originalRequest: any, error: any): Promise<any> {
+async function attemptTokenRefresh(originalRequest: any): Promise<any> {
   if (isRefreshing) {
     // Si ya estamos refrescando, poner esta petición en cola
     return new Promise((resolve, reject) => {
@@ -192,7 +192,7 @@ apiClient.interceptors.response.use(
             window.removeEventListener('session-continue', handleContinue)
             window.removeEventListener('session-cancel', handleCancel)
             // Continuar con el refresh normal
-            attemptTokenRefresh(originalRequest, error).then(resolve).catch(reject)
+            attemptTokenRefresh(originalRequest).then(resolve).catch(reject)
           }
           
           const handleCancel = () => {
@@ -211,7 +211,7 @@ apiClient.interceptors.response.use(
       }
 
       // Refresh automático para usuarios activos
-      return attemptTokenRefresh(originalRequest, error)
+      return attemptTokenRefresh(originalRequest)
     }
 
     // Manejar errores de validación (422)
