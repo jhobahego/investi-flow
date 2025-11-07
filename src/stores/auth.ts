@@ -34,11 +34,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       await apiClient.post('/auth/register', payload)
-      return { success: true }
     } catch (error) {
       console.error('Registration error:', error)
       errorMessage.value = error instanceof Error ? error.message : 'Error al registrar la cuenta. Por favor, intenta nuevamente.'
-      return { success: false }
+      throw error
     } finally {
       loading.value = false
     }
@@ -65,12 +64,11 @@ export const useAuthStore = defineStore('auth', () => {
       setAuthData(null, data.access_token)
       await fetchUser()
       router.push({ name: 'Dashboard' })
-      return { success: true }
     } catch (error) {
       console.error('Login error:', error)
       setAuthData(null, null)
       errorMessage.value = error instanceof Error ? error.message : 'Error al iniciar sesión. Por favor, intenta nuevamente.'
-      return { success: false }
+      throw error
     } finally {
       loading.value = false
     }
