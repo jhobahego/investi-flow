@@ -38,7 +38,7 @@
       <div class="mb-6">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-4">
-            <button @click="$router.go(-1)" class="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+            <button @click="$router.push('/dashboard')" class="p-2 text-gray-500 hover:text-gray-700 transition-colors">
               <ArrowLeftIcon class="w-5 h-5" />
             </button>
             <div>
