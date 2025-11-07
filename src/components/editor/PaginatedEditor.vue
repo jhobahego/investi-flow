@@ -709,14 +709,32 @@ onMounted(() => {
     page-break-after: avoid;
 }
 
+/* Las listas ahora se manejan en style.css global */
 :deep(.paginated-content .ProseMirror ul),
 :deep(.paginated-content .ProseMirror ol) {
-    padding-left: 2em;
-    margin-bottom: 1em;
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+:deep(.paginated-content .ProseMirror ul) {
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+:deep(.paginated-content .ProseMirror ol) {
+    list-style-type: decimal;
+    list-style-position: outside;
 }
 
 :deep(.paginated-content .ProseMirror li) {
-    margin-bottom: 0.5em;
+    margin: 0.25rem 0;
+    padding-left: 0.25rem;
+    display: list-item;
+}
+
+:deep(.paginated-content .ProseMirror li > p) {
+    margin: 0;
+    display: inline;
 }
 
 /* Suggestion Popup */
