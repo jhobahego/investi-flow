@@ -5,17 +5,17 @@
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <header class="mb-8">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
               Bienvenid@, {{ user?.full_name }}
             </h1>
-            <p class="text-gray-600 mt-1">
+            <p class="text-gray-600 mt-1 text-sm sm:text-base">
               Gestiona tus proyectos de investigación y colabora con tu equipo
             </p>
           </div>
           <button @click="showCreateModal = true"
-            class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2">
+            class="bg-primary-600 hover:bg-primary-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2 w-full sm:w-auto">
             <PlusIcon class="w-5 h-5" />
             <span>Nuevo Proyecto</span>
           </button>
@@ -23,51 +23,51 @@
       </header>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-primary-100">
+            <div class="p-3 rounded-full bg-primary-100 flex-shrink-0">
               <FolderIcon class="w-6 h-6 text-primary-600" />
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Proyectos</p>
-              <p class="text-2xl font-bold text-gray-900">{{ projects.length }}</p>
+            <div class="ml-4 min-w-0">
+              <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Proyectos</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ projects.length }}</p>
             </div>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-green-100">
+            <div class="p-3 rounded-full bg-green-100 flex-shrink-0">
               <CheckCircleIcon class="w-6 h-6 text-green-600" />
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Activos</p>
-              <p class="text-2xl font-bold text-gray-900">{{ activeProjects }}</p>
+            <div class="ml-4 min-w-0">
+              <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Activos</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ activeProjects }}</p>
             </div>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-secondary-100">
+            <div class="p-3 rounded-full bg-secondary-100 flex-shrink-0">
               <LexiAvatar :show-name="false" />
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Con Lexi</p>
-              <p class="text-2xl font-bold text-gray-900">{{ projectsWithAI }}</p>
+            <div class="ml-4 min-w-0">
+              <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Con Lexi</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ projectsWithAI }}</p>
             </div>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
-            <div class="p-3 rounded-full bg-yellow-100">
+            <div class="p-3 rounded-full bg-yellow-100 flex-shrink-0">
               <UsersIcon class="w-6 h-6 text-yellow-600" />
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Colaboradores</p>
-              <p class="text-2xl font-bold text-gray-900">{{ totalCollaborators }}</p>
+            <div class="ml-4 min-w-0">
+              <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Colaboradores</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ totalCollaborators }}</p>
             </div>
           </div>
         </div>
@@ -75,11 +75,11 @@
 
       <!-- Projects Grid -->
       <div class="mb-8">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <h2 class="text-xl font-semibold text-gray-900">Mis Proyectos</h2>
           <div class="flex items-center space-x-4">
             <select v-model="filterStatus"
-              class="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
+              class="w-full sm:w-auto rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
               <option value="">Todos los estados</option>
               <option value="planning">Planificación</option>
               <option value="in_progress">En progreso</option>
@@ -149,13 +149,17 @@
           class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
           Cancelar
         </button>
-        <button @click="handleCreateProject" :disabled="!newProject.name || !newProject.description || projectsStore.loading"
+        <button @click="handleCreateProject"
+          :disabled="!newProject.name || !newProject.description || projectsStore.loading"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]">
           <span v-if="!projectsStore.loading">Crear Proyecto</span>
           <span v-else class="flex items-center">
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
             </svg>
             Creando...
           </span>

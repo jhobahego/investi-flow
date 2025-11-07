@@ -4,36 +4,36 @@
 
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-6 flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <button @click="handleGoBack" class="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center space-x-4 min-w-0">
+          <button @click="handleGoBack" class="p-2 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0">
             <ArrowLeftIcon class="w-5 h-5" />
           </button>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-              <LexiAvatar :show-name="false" class="scale-90" :is-active="isTyping" />
-              <span>Chat con Lexi</span>
+          <div class="min-w-0 flex-1">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center space-x-2">
+              <LexiAvatar :show-name="false" class="scale-90 flex-shrink-0" :is-active="isTyping" />
+              <span class="truncate">Chat con Lexi</span>
             </h1>
-            <p class="text-gray-600">{{ projectName }}</p>
+            <p class="text-sm sm:text-base text-gray-600 truncate">{{ projectName }}</p>
           </div>
         </div>
 
         <!-- Botón para ver conversaciones -->
         <button v-if="!showSidebar" @click="showSidebar = true"
-          class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center space-x-2">
+          class="w-full sm:w-auto px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2">
           <ChatBubbleLeftRightIcon class="w-4 h-4" />
           <span>Conversaciones</span>
         </button>
       </div>
 
       <!-- Layout principal -->
-      <div class="flex gap-6">
+      <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
         <!-- Sidebar de conversaciones -->
         <div v-if="showSidebar"
-          class="w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col max-h-[calc(100vh-200px)]">
+          class="w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col max-h-[400px] lg:max-h-[calc(100vh-200px)]">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Conversaciones</h2>
-            <button @click="showSidebar = false" class="p-1 text-gray-400 hover:text-gray-600">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-900">Conversaciones</h2>
+            <button @click="showSidebar = false" class="p-1 text-gray-400 hover:text-gray-600 lg:hidden">
               <XMarkIcon class="w-5 h-5" />
             </button>
           </div>
@@ -76,14 +76,14 @@
 
         <!-- Área de chat -->
         <div
-          class="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col max-h-[calc(100vh-200px)]">
+          class="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[500px] lg:max-h-[calc(100vh-200px)]">
           <!-- Mensajes -->
-          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             <!-- Empty state -->
-            <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center">
-              <LexiAvatar :show-name="false" class="scale-150 mb-4" />
-              <h3 class="text-lg font-medium text-gray-900 mb-2">Inicia una conversación</h3>
-              <p class="text-gray-500 max-w-md">
+            <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center px-4">
+              <LexiAvatar :show-name="false" class="scale-125 sm:scale-150 mb-4" />
+              <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">Inicia una conversación</h3>
+              <p class="text-sm sm:text-base text-gray-500 max-w-md">
                 Pregúntame cualquier cosa sobre tu proyecto de investigación. Puedo ayudarte con
                 estructura, metodología,
                 análisis y más.
@@ -94,15 +94,15 @@
             <div v-for="(message, index) in messages" :key="index">
               <!-- Mensaje del usuario -->
               <div v-if="message.role === 'user'" class="flex justify-end mb-4">
-                <div class="max-w-[70%] bg-primary-600 text-white rounded-lg px-4 py-3">
-                  <p class="text-sm whitespace-pre-wrap">{{ message.content }}</p>
+                <div class="max-w-[85%] sm:max-w-[70%] bg-primary-600 text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3">
+                  <p class="text-sm whitespace-pre-wrap break-words">{{ message.content }}</p>
                 </div>
               </div>
 
               <!-- Mensaje del asistente -->
-              <div v-else class="flex items-start mb-4 space-x-3">
-                <LexiAvatar :show-name="false" class="mt-1" />
-                <div class="max-w-[70%] bg-gray-100 text-gray-900 rounded-lg px-4 py-3">
+              <div v-else class="flex items-start mb-4 space-x-2 sm:space-x-3">
+                <LexiAvatar :show-name="false" class="mt-1 flex-shrink-0" />
+                <div class="max-w-[85%] sm:max-w-[70%] bg-gray-100 text-gray-900 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
                   <div class="text-sm markdown-content" v-dompurify-html="renderMarkdown(message.content)"></div>
                   <p v-if="message.model_used" class="text-xs text-gray-500 mt-2">
                     {{ message.model_used }}
@@ -112,9 +112,9 @@
             </div>
 
             <!-- Indicador de escritura -->
-            <div v-if="isTyping" class="flex items-start space-x-3">
-              <LexiAvatar :show-name="false" :is-active="true" />
-              <div class="bg-gray-100 rounded-lg px-4 py-3">
+            <div v-if="isTyping" class="flex items-start space-x-2 sm:space-x-3">
+              <LexiAvatar :show-name="false" :is-active="true" class="flex-shrink-0" />
+              <div class="bg-gray-100 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
                 <div class="flex space-x-1">
                   <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                   <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
@@ -125,15 +125,15 @@
           </div>
 
           <!-- Input de mensaje -->
-          <div class="border-t border-gray-200 p-4">
-            <form @submit.prevent="handleSendMessage" class="flex space-x-3">
+          <div class="border-t border-gray-200 p-3 sm:p-4">
+            <form @submit.prevent="handleSendMessage" class="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <textarea v-model="currentMessage" @keydown.enter.exact.prevent="handleSendMessage"
                 placeholder="Escribe tu mensaje... (Enter para enviar, Shift+Enter para nueva línea)" rows="2"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                class="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none text-sm"
                 :disabled="isTyping"></textarea>
               <button type="submit" :disabled="!currentMessage.trim() || isTyping"
-                class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
-                <PaperAirplaneIcon class="w-5 h-5" />
+                class="px-4 sm:px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm">
+                <PaperAirplaneIcon class="w-4 sm:w-5 h-4 sm:h-5" />
                 <span>Enviar</span>
               </button>
             </form>
