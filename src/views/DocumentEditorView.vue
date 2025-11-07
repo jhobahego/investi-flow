@@ -1,34 +1,35 @@
 <template>
     <div class="min-h-screen bg-gray-100">
-        <div class="max-w-6xl mx-auto p-4">
+        <div class="max-w-6xl mx-auto p-2 sm:p-4">
             <!-- Header -->
-            <div class="bg-white rounded-lg shadow-sm mb-4 p-4">
-                <div class="flex items-center justify-between gap-4">
+            <div class="bg-white rounded-lg shadow-sm mb-4 p-3 sm:p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                     <button @click="goBack"
-                        class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                        class="flex items-center gap-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium text-sm sm:text-base self-start"
                         type="button">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        Volver
+                        <span class="hidden sm:inline">Volver</span>
                     </button>
 
-                    <div class="flex-1">
-                        <h1 class="text-2xl font-bold text-gray-900">
+                    <div class="flex-1 min-w-0">
+                        <h1 class="text-lg sm:text-2xl font-bold text-gray-900 truncate">
                             {{ documentTitle }}
                         </h1>
-                        <p class="text-sm text-gray-500 mt-1">
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1 truncate">
                             Proyecto: {{ projectName }}
                         </p>
                     </div>
 
                     <button @click="saveDocument" :disabled="isSaving"
-                        class="flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                        class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
                         type="button">
                         <span v-if="isSaving" class="animate-spin">⏳</span>
                         <span v-else>💾</span>
-                        {{ isSaving ? 'Guardando...' : 'Guardar' }}
+                        <span class="hidden sm:inline">{{ isSaving ? 'Guardando...' : 'Guardar' }}</span>
+                        <span class="sm:hidden">{{ isSaving ? '...' : 'Guardar' }}</span>
                     </button>
                 </div>
             </div>
@@ -36,9 +37,11 @@
             <!-- Editor -->
             <div class="mb-4">
                 <!-- Mensaje informativo -->
-                <div class="info-banner mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div
+                    class="info-banner mb-4 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-blue-800">
+                    <div class="flex items-start gap-2">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
