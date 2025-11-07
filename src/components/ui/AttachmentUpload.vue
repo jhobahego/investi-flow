@@ -64,9 +64,9 @@
             <ArrowDownTrayIcon class="w-4 h-4" :class="{ 'animate-bounce': isDownloading }" />
           </button>
 
-          <!-- Botón visualizar (sin funcionalidad por ahora) -->
-          <button type="button" class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            title="Visualizar documento (funcionalidad en desarrollo)" @click="viewDocument" disabled>
+          <!-- Botón visualizar -->
+          <button type="button" class="p-2 text-purple-600 hover:text-purple-700 transition-colors"
+            title="Editar documento con IA" @click="viewDocument">
             <EyeIcon class="w-4 h-4" />
           </button>
 
@@ -97,6 +97,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useProjectsStore } from '../../stores/projects'
 import { useAttachmentsStore } from '../../stores/attachments'
 import type { AttachmentResponse } from '../../types'
 import {
@@ -127,6 +129,8 @@ const emit = defineEmits<{
   'attachment-updated': [attachment: AttachmentResponse]
 }>()
 
+const router = useRouter()
+const projectsStore = useProjectsStore()
 const attachmentsStore = useAttachmentsStore()
 
 // Referencias
@@ -273,8 +277,35 @@ async function downloadDocument() {
 }
 
 function viewDocument() {
-  // Placeholder para futura implementación
-  console.log('Visualizar documento - funcionalidad pendiente')
+  if (!props.currentAttachment) return
+
+  // Navegar a la vista del editor
+  router.push({
+    name: 'DocumentEditor',
+    params: {
+      id: getProjectId()
+    },
+    query: {
+      entityType: props.entityType,
+      entityId: props.entityId.toString()
+    }
+  })
+}
+
+function getProjectId(): number {
+  // Si entityType es 'project', usar entityId directamente
+  if (props.entityType === 'project') {
+    return props.entityId
+  }
+
+  // Si es phase o task, obtener el projectId del store actual
+  const currentProject = projectsStore.currentProject
+  if (currentProject?.id) {
+    return currentProject.id
+  }
+
+  // Fallback: intentar obtener del currentProjectId del store
+  return projectsStore.currentProjectId || props.entityId
 }
 
 function formatDate(dateString: string): string {

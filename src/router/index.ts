@@ -41,6 +41,12 @@ const routes: RouteRecordRaw[] = [
     name: 'SearchResults',
     component: () => import('../views/SearchResults.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/project/:id/document/edit',
+    name: 'DocumentEditor',
+    component: () => import('../views/DocumentEditorView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
