@@ -1,17 +1,69 @@
-<script setup>
-import { onMounted } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useAuthSync } from './composables/useAuthSync'
+import { useActivityDetector } from './composables/useActivityDetector'
+import SessionExpirationModal from './components/ui/SessionExpirationModal.vue'
 
 const authStore = useAuthStore()
+// Usar el composable para sincronizar el estado de autenticación
+useAuthSync()
+
+// Detectar actividad del usuario
+const { updateActivity } = useActivityDetector()
+
+// Estado del modal de expiración
+const showExpirationModal = ref(false)
+
+// Manejar evento de sesión por expirar
+const handleSessionExpiring = (event: CustomEvent) => {
+  if (event.detail.requiresConfirmation) {
+    showExpirationModal.value = true
+  }
+}
+
+// Usuario decide continuar
+const handleContinueSession = () => {
+  showExpirationModal.value = false
+  updateActivity() // Actualizar actividad
+  window.dispatchEvent(new Event('session-continue'))
+}
+
+// Usuario decide cerrar sesión
+const handleCancelSession = () => {
+  showExpirationModal.value = false
+  window.dispatchEvent(new Event('session-cancel'))
+}
+
+// Sesión expiró (contador llegó a 0)
+const handleSessionExpired = () => {
+  showExpirationModal.value = false
+  authStore.logout()
+}
 
 onMounted(() => {
   authStore.checkAuth()
+  
+  // Inicializar el tiempo de última actividad
+  updateActivity()
+  
+  // Escuchar eventos de sesión
+  window.addEventListener('session-expiring', handleSessionExpiring as EventListener)
 })
 </script>
 
 <template>
   <div id="app">
     <router-view />
+    
+    <!-- Modal de expiración de sesión -->
+    <SessionExpirationModal
+      :show="showExpirationModal"
+      :initial-countdown="60"
+      @continue="handleContinueSession"
+      @cancel="handleCancelSession"
+      @expired="handleSessionExpired"
+    />
   </div>
 </template>
 
