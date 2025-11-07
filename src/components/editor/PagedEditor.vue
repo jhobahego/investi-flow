@@ -741,12 +741,29 @@ onMounted(() => {
 
 .page-content-static :deep(ul),
 .page-content-static :deep(ol) {
-    padding-left: 2em;
-    margin-bottom: 1em;
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+.page-content-static :deep(ul) {
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+.page-content-static :deep(ol) {
+    list-style-type: decimal;
+    list-style-position: outside;
 }
 
 .page-content-static :deep(li) {
-    margin-bottom: 0.5em;
+    margin: 0.25rem 0;
+    padding-left: 0.25rem;
+    display: list-item;
+}
+
+.page-content-static :deep(li > p) {
+    margin: 0;
+    display: inline;
 }
 
 .page-content-static :deep(strong) {
@@ -788,12 +805,29 @@ onMounted(() => {
 
 :deep(.page-content .ProseMirror ul),
 :deep(.page-content .ProseMirror ol) {
-    padding-left: 2em;
-    margin-bottom: 1em;
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+:deep(.page-content .ProseMirror ul) {
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+:deep(.page-content .ProseMirror ol) {
+    list-style-type: decimal;
+    list-style-position: outside;
 }
 
 :deep(.page-content .ProseMirror li) {
-    margin-bottom: 0.5em;
+    margin: 0.25rem 0;
+    padding-left: 0.25rem;
+    display: list-item;
+}
+
+:deep(.page-content .ProseMirror li > p) {
+    margin: 0;
+    display: inline;
 }
 
 /* Suggestion Popup */
