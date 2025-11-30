@@ -1,7 +1,18 @@
 <template>
   <div class="attachment-upload">
+    <!-- Skeleton mientras carga documento existente -->
+    <div v-if="loadingDocument" class="border border-gray-200 rounded-lg p-4">
+      <div class="animate-pulse flex items-center space-x-3">
+        <div class="w-8 h-8 bg-gray-200 rounded"></div>
+        <div class="flex-1 space-y-2">
+          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Área de drag & drop -->
-    <div v-if="!currentAttachment"
+    <div v-else-if="!currentAttachment"
       class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
       :class="{
         'border-primary-400 bg-primary-50': isDragOver,
@@ -142,6 +153,7 @@ const isDragOver = ref(false)
 const dragCounter = ref(0)
 const error = ref<string | null>(null)
 const isDownloading = ref(false)
+const loadingDocument = ref(false)
 
 // Computed
 const loading = computed(() => attachmentsStore.loading)
@@ -321,10 +333,13 @@ function formatDate(dateString: string): string {
 // Cargar documento actual al montar
 onMounted(async () => {
   if (!props.currentAttachment) {
+    loadingDocument.value = true
     try {
       await attachmentsStore.getDocument(props.entityType, props.entityId)
     } catch (err) {
       // Ignorar errores 404 (no hay documento)
+    } finally {
+      loadingDocument.value = false
     }
   }
 })
