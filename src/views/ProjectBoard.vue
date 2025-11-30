@@ -14,7 +14,7 @@
         </div>
       </div>
       <div class="flex space-x-6 overflow-x-auto pb-6">
-        <SkeletonLoader type="phase-column" :count="3" />
+        <SkeletonLoader v-for="i in 4" :key="i" type="phase-column" class="flex-shrink-0 w-80" />
       </div>
     </div>
 
@@ -66,15 +66,29 @@
               <span class="hidden sm:inline">Chat con Lexi</span>
               <span class="sm:hidden">Chat</span>
             </button>
-            <button @click="showProjectAttachmentModal = true"
+            <button @click="showProjectAttachmentModal = true" :disabled="attachmentsStore.loading"
               class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md transition-colors flex items-center justify-center space-x-2 text-sm"
-              :class="projectDocument
-                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-              :title="projectDocument ? 'Ver documento principal' : 'Adjuntar documento principal'">
-              <DocumentTextIcon class="w-4 h-4" />
-              <span class="hidden sm:inline">{{ projectDocument ? 'Documento' : 'Adjuntar' }}</span>
-              <PaperClipIcon v-if="projectDocument" class="w-3 h-3" />
+              :class="[
+                projectDocument
+                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                attachmentsStore.loading ? 'opacity-75 cursor-wait' : ''
+              ]" :title="projectDocument ? 'Ver documento principal' : 'Adjuntar documento principal'">
+              <template v-if="attachmentsStore.loading">
+                <svg class="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                <span class="hidden sm:inline">Cargando...</span>
+              </template>
+              <template v-else>
+                <DocumentTextIcon class="w-4 h-4" />
+                <span class="hidden sm:inline">{{ projectDocument ? 'Documento' : 'Adjuntar' }}</span>
+                <PaperClipIcon v-if="projectDocument" class="w-3 h-3" />
+              </template>
             </button>
             <button @click="showCreatePhaseModal = true"
               class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors text-sm whitespace-nowrap">
@@ -512,8 +526,13 @@ const handleCreatePhase = async () => {
     // Mostrar notificación de éxito
     showSuccess('Fase creada exitosamente')
 
-    // Recargar proyecto en segundo plano
-    await loadProject()
+    // Invalidar cache y recargar proyecto
+    if (projectsStore.currentProject) {
+      projectsStore.invalidateProjectCache(projectsStore.currentProject.id)
+      // Limpiar currentProject para forzar recarga completa
+      projectsStore.currentProject = null
+      await loadProject(true)
+    }
   } catch (err) {
     console.error('Error creating phase:', err)
     showError('Error al crear la fase. Intenta nuevamente.')
@@ -543,8 +562,13 @@ const updatePhase = async () => {
     // Mostrar notificación de éxito
     showSuccess('Fase actualizada exitosamente')
 
-    // Recargar proyecto en segundo plano
-    await loadProject()
+    // Invalidar cache y recargar proyecto
+    if (projectsStore.currentProject) {
+      projectsStore.invalidateProjectCache(projectsStore.currentProject.id)
+      // Limpiar currentProject para forzar recarga completa
+      projectsStore.currentProject = null
+      await loadProject(true)
+    }
   } catch (err) {
     console.error('Error updating phase:', err)
     showError('Error al actualizar la fase. Intenta nuevamente.')
@@ -569,8 +593,13 @@ const confirmDeletePhase = async () => {
     // Mostrar notificación de éxito
     showSuccess('Fase eliminada exitosamente')
 
-    // Recargar proyecto en segundo plano
-    await loadProject()
+    // Invalidar cache y recargar proyecto
+    if (projectsStore.currentProject) {
+      projectsStore.invalidateProjectCache(projectsStore.currentProject.id)
+      // Limpiar currentProject para forzar recarga completa
+      projectsStore.currentProject = null
+      await loadProject(true)
+    }
   } catch (err) {
     console.error('Error deleting phase:', err)
     showError('Error al eliminar la fase. Intenta nuevamente.')
@@ -728,15 +757,22 @@ const navigateToChat = () => {
 }
 
 // Función para cargar el proyecto
-const loadProject = async () => {
+const loadProject = async (forceRefresh = false) => {
+  // Limpiar errores previos de fases
+  phaseStore.clearError()
+
   try {
     const project_id = route.params.id
     if (!project_id) {
       throw new Error('Project ID is required in route params')
     }
 
-    // Cargar proyecto con fases
-    const data = await projectsStore.fetchProjectWithPhases(Number(project_id))
+    // Cargar proyecto con fases (usando cache si está disponible)
+    const data = await projectsStore.fetchProjectWithPhases(
+      Number(project_id),
+      { forceRefresh }
+    )
+
     if (!data) {
       throw new Error('Project not found')
     }
