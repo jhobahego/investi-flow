@@ -1,7 +1,7 @@
 <template>
   <div class="attachment-upload">
     <!-- Skeleton mientras carga documento existente -->
-    <div v-if="attachmentsStore.loading || loadingDocument" class="border border-gray-200 rounded-lg p-4">
+    <div v-if="loading || loadingDocument" class="border border-gray-200 rounded-lg p-4">
       <div class="animate-pulse flex items-center space-x-3">
         <div class="w-8 h-8 bg-gray-200 rounded"></div>
         <div class="flex-1 space-y-2">
