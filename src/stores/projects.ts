@@ -112,8 +112,10 @@ export const useProjectsStore = defineStore('projects', () => {
       if (cached?.etag && !forceRefresh) {
         headers['If-None-Match'] = cached.etag
       }
-      
-      const url = `/proyectos/${id}/phases` + (forceRefresh ? `?t=${Date.now()}` : '')
+      if (forceRefresh) {
+        headers['Cache-Control'] = 'no-cache'
+      }
+      const url = `/proyectos/${id}/phases`
       
       const response = await apiClient.get<ProjectWithPhases>(
         url,
