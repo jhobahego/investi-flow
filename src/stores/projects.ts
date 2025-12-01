@@ -90,7 +90,7 @@ export const useProjectsStore = defineStore('projects', () => {
     if (!forceRefresh && projectCache.value.has(id)) {
       const cached = projectCache.value.get(id)!
       const cacheAge = Date.now() - cached.timestamp
-      const CACHE_MAX_AGE = 5 * 60 * 1000 // 5 minutes
+      const CACHE_MAX_AGE = 30 * 1000 // 30 seconds
       
       // If cache is still fresh, use it
       if (cacheAge < CACHE_MAX_AGE) {
