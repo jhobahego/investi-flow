@@ -65,9 +65,9 @@ Este documento contiene la información esencial para que un agente de código (
 
 11) Convenciones de Git y Commits
 - **Granularidad:** Commits pequeños y atómicos. Un commit por funcionalidad o fix. Evitar "mega-commits" que toquen muchos archivos no relacionados.
-- **Formato de mensaje:** Usar Conventional Commits (`<tipo>(<scope>): <descripción>`).
+- **Formato de mensaje:** Usar Conventional Commits en español (`<tipo>(<scope>): <descripción>`).
   - Tipos: `feat` (nueva feature), `fix` (bug fix), `docs` (documentación), `style` (formato), `refactor` (sin cambios funcionales), `test`, `chore`.
-  - Ejemplo: `feat(editor): add shortcut for AI suggestions` o `fix(auth): handle token refresh error`.
+  - Ejemplo: `feat(editor): agregar atajo para sugerencias de IA` o `fix(auth): manejar error de refresh de token`.
 - **Longitud:** Título corto y descriptivo (máx 72 caracteres). Usar cuerpo del mensaje para detalles técnicos si es necesario.
 - **Scope:** Limitar cambios a los archivos necesarios para la tarea específica.
 
