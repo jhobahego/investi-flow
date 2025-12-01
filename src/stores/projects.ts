@@ -10,12 +10,22 @@ import type {
   AttachmentResponse
 } from '../types'
 
+// Cache interface
+interface ProjectCache {
+  data: ProjectWithPhases
+  etag: string | null
+  timestamp: number
+}
+
 export const useProjectsStore = defineStore('projects', () => {
   const projects = ref<ProjectResponse[]>([])
   const currentProject = ref<ProjectWithPhases | null>(null)
   const currentProjectId = ref<number | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  // Cache for project with phases
+  const projectCache = ref<Map<number, ProjectCache>>(new Map())
 
   // Computed properties
   const projectsCount = computed(() => projects.value.length)
@@ -70,15 +80,83 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function fetchProjectWithPhases(id: number): Promise<ProjectWithPhases> {
+  async function fetchProjectWithPhases(
+    id: number,
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<ProjectWithPhases> {
+    const { forceRefresh = false } = options
+    
+    // Check cache first (if not forcing refresh)
+    if (!forceRefresh && projectCache.value.has(id)) {
+      const cached = projectCache.value.get(id)!
+      const cacheAge = Date.now() - cached.timestamp
+      const CACHE_MAX_AGE = 30 * 1000 // 30 seconds
+      
+      // If cache is still fresh, use it
+      if (cacheAge < CACHE_MAX_AGE) {
+        currentProject.value = cached.data
+        currentProjectId.value = id
+        return cached.data
+      }
+    }
+    
     loading.value = true
     error.value = null
+    
+    // Get cached etag if available (declare outside try for catch block access)
+    const cached = projectCache.value.get(id)
+    
     try {
-      const { data } = await apiClient.get<ProjectWithPhases>(`/proyectos/${id}/phases`)
+      const headers: Record<string, string> = {}
+      
+      if (cached?.etag && !forceRefresh) {
+        headers['If-None-Match'] = cached.etag
+      }
+      if (forceRefresh) {
+        headers['Cache-Control'] = 'no-cache'
+      }
+      const url = `/proyectos/${id}/phases`
+      
+      const response = await apiClient.get<ProjectWithPhases>(
+        url,
+        { headers }
+      )
+      
+      // If we get 304 Not Modified, use cached data
+      if (response.status === 304 && cached) {
+        // Update timestamp but keep data
+        projectCache.value.set(id, {
+          ...cached,
+          timestamp: Date.now()
+        })
+        currentProject.value = cached.data
+        currentProjectId.value = id
+        return cached.data
+      }
+      
+      // New data received
+      const data = response.data
+      const etag = response.headers['etag'] || null
+      
+      // Update cache
+      projectCache.value.set(id, {
+        data,
+        etag,
+        timestamp: Date.now()
+      })
+      
       currentProject.value = data
       currentProjectId.value = id
       return data
     } catch (err: any) {
+      // If we have cached data and error is not critical, use cache
+      if (cached && err.response?.status !== 404) {
+        console.warn('Using cached data due to error:', err)
+        currentProject.value = cached.data
+        currentProjectId.value = id
+        return cached.data
+      }
+      
       error.value = err.response?.data?.detail || 'Error al cargar proyecto con fases'
       console.error(`Failed to fetch project with phases ${id}:`, err)
       throw err
@@ -234,6 +312,14 @@ export const useProjectsStore = defineStore('projects', () => {
     currentProject.value = null
     currentProjectId.value = null
   }
+  
+  function invalidateProjectCache(id: number) {
+    projectCache.value.delete(id)
+  }
+  
+  function clearProjectCache() {
+    projectCache.value.clear()
+  }
 
   return {
     // State
@@ -251,6 +337,8 @@ export const useProjectsStore = defineStore('projects', () => {
     setCurrentProjectId,
     clearError,
     clearCurrentProject,
+    invalidateProjectCache,
+    clearProjectCache,
     fetchProjects,
     fetchProjectById,
     fetchProjectWithPhases,

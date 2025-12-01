@@ -60,16 +60,22 @@
     </div>
 
     <div class="space-y-3 flex-1">
-      <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" :has-attachment="hasTaskAttachment(task.id)"
-        @click="$emit('task-click', task)" @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)"
-        @drag-start="handleStartedDrag" />
+      <!-- Loading skeleton -->
+      <SkeletonLoader v-if="loadingTasks" type="card" :count="2" />
+      
+      <!-- Task cards -->
+      <template v-else>
+        <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" :has-attachment="hasTaskAttachment(task.id)"
+          @click="$emit('task-click', task)" @edit="$emit('task-edit', task)" @delete="$emit('task-delete', task)"
+          @drag-start="handleStartedDrag" />
 
-      <div v-if="tasksInPhase.length === 0"
-        class="text-center py-8 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
-        <DocumentIcon class="w-8 h-8 mx-auto mb-2 text-gray-400" />
-        <p>No hay tareas en esta fase</p>
-        <p class="text-xs mt-1">Arrastra una tarea aquí o crea una nueva</p>
-      </div>
+        <div v-if="tasksInPhase.length === 0"
+          class="text-center py-8 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
+          <DocumentIcon class="w-8 h-8 mx-auto mb-2 text-gray-400" />
+          <p>No hay tareas en esta fase</p>
+          <p class="text-xs mt-1">Arrastra una tarea aquí o crea una nueva</p>
+        </div>
+      </template>
     </div>
 
     <!-- Modal de adjuntos de fase -->
@@ -87,6 +93,7 @@ import { DocumentIcon, EllipsisHorizontalIcon, PaperClipIcon, PencilIcon, PlusIc
 import TaskCard from './TaskCard.vue'
 import Modal from './Modal.vue'
 import AttachmentUpload from './AttachmentUpload.vue'
+import SkeletonLoader from './SkeletonLoader.vue'
 import { type TaskResponse, type PhaseResponse, type AttachmentResponse } from '../../types'
 import { useAttachmentsStore } from '../../stores/attachments'
 
@@ -100,6 +107,10 @@ const props = defineProps({
     type: Array as PropType<TaskResponse[]>,
     required: true,
     default: () => []
+  },
+  loadingTasks: {
+    type: Boolean,
+    default: false
   }
 })
 

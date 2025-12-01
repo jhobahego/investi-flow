@@ -38,31 +38,37 @@
             </button>
           </div>
 
-          <!-- Lista de conversaciones -->
+          <!-- Lista de conversaciones con skeleton -->
           <div class="flex-1 overflow-y-auto space-y-2">
-            <div v-for="conv in conversations" :key="conv.id" @click="selectConversation(conv.id)"
-              class="p-3 rounded-lg cursor-pointer transition-colors border"
-              :class="currentConversationId === conv.id ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50 border-transparent'">
-              <div class="flex items-start justify-between">
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-gray-900 truncate">{{ conv.title }}</p>
-                  <p class="text-xs text-gray-500 mt-1 truncate">
-                    {{ conv.last_message_preview || 'Sin mensajes' }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-1">
-                    {{ formatRelativeTime(conv.updated_at) }} · {{ conv.message_count }} mensajes
-                  </p>
+            <!-- Loading skeleton -->
+            <SkeletonLoader v-if="loadingConversations" type="conversation" :count="3" />
+            
+            <!-- Conversaciones -->
+            <div v-else>
+              <div v-for="conv in conversations" :key="conv.id" @click="selectConversation(conv.id)"
+                class="p-3 rounded-lg cursor-pointer transition-colors border"
+                :class="currentConversationId === conv.id ? 'bg-primary-50 border-primary-200' : 'hover:bg-gray-50 border-transparent'">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ conv.title }}</p>
+                    <p class="text-xs text-gray-500 mt-1 truncate">
+                      {{ conv.last_message_preview || 'Sin mensajes' }}
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">
+                      {{ formatRelativeTime(conv.updated_at) }} · {{ conv.message_count }} mensajes
+                    </p>
+                  </div>
+                  <button @click.stop="handleDeleteConversation(conv.id)"
+                    class="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                    <TrashIcon class="w-4 h-4" />
+                  </button>
                 </div>
-                <button @click.stop="handleDeleteConversation(conv.id)"
-                  class="p-1 text-gray-400 hover:text-red-600 transition-colors">
-                  <TrashIcon class="w-4 h-4" />
-                </button>
               </div>
-            </div>
 
-            <!-- Empty state -->
-            <div v-if="conversations.length === 0" class="text-center py-8 text-gray-500 text-sm">
-              No hay conversaciones previas
+              <!-- Empty state -->
+              <div v-if="conversations.length === 0 && !loadingConversations" class="text-center py-8 text-gray-500 text-sm">
+                No hay conversaciones previas
+              </div>
             </div>
           </div>
 
@@ -152,6 +158,7 @@ import { useToast } from '../composables/useToast'
 import { chatService } from '../api/chatService'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import LexiAvatar from '../components/ui/LexiAvatar.vue'
+import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import {
   ArrowLeftIcon,
   ChatBubbleLeftRightIcon,
@@ -187,6 +194,7 @@ const isTyping = ref(false)
 const showSidebar = ref(true)
 const currentConversationId = ref<number | null>(null)
 const messagesContainer = ref<HTMLElement | null>(null)
+const loadingConversations = ref(false)
 
 // Computed
 const projectId = computed(() => Number(route.params.id))
@@ -198,10 +206,13 @@ const handleGoBack = () => {
 }
 
 const loadConversations = async () => {
+  loadingConversations.value = true
   try {
     conversations.value = await chatService.getConversations(projectId.value)
   } catch (error) {
     console.error('Error loading conversations:', error)
+  } finally {
+    loadingConversations.value = false
   }
 }
 

@@ -25,10 +25,14 @@ export const useAuthStore = defineStore('auth', () => {
     
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken)
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
     } else {
       localStorage.removeItem('accessToken')
-      delete apiClient.defaults.headers.common['Authorization']
+    }
+    
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue)
+    } else {
+      localStorage.removeItem('refreshToken')
     }
     
     if (refreshTokenValue) {

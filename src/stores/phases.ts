@@ -9,6 +9,7 @@ import type {
   AttachmentResponse,
   ApiError
 } from '../types'
+import { useProjectsStore } from './projects'
 
 export const usePhasesStore = defineStore('phases', () => {
   const phases = ref<PhaseResponse[]>([])
@@ -44,6 +45,10 @@ export const usePhasesStore = defineStore('phases', () => {
 
       // Agregar la nueva fase a la lista
       phases.value.push(data)
+
+      // Invalidar caché del proyecto
+      const projectsStore = useProjectsStore()
+      projectsStore.invalidateProjectCache(data.project_id)
 
       return data
     } catch (err: any) {
@@ -98,6 +103,10 @@ export const usePhasesStore = defineStore('phases', () => {
         currentPhase.value = data
       }
 
+      // Invalidar caché del proyecto
+      const projectsStore = useProjectsStore()
+      projectsStore.invalidateProjectCache(data.project_id)
+
       return data
     } catch (err: any) {
       const apiError: ApiError = err.response?.data
@@ -115,12 +124,22 @@ export const usePhasesStore = defineStore('phases', () => {
     try {
       await apiClient.delete(`/fases/${phaseId}`)
 
+      // Obtener project_id antes de eliminar para invalidar caché
+      const phase = phases.value.find(p => p.id === phaseId)
+      const projectId = phase?.project_id
+
       // Remover de la lista
       phases.value = phases.value.filter(p => p.id !== phaseId)
 
       // Limpiar fase actual si es la misma
       if (currentPhase.value && currentPhase.value.id === phaseId) {
         currentPhase.value = null
+      }
+
+      // Invalidar caché del proyecto
+      if (projectId) {
+        const projectsStore = useProjectsStore()
+        projectsStore.invalidateProjectCache(projectId)
       }
     } catch (err: any) {
       const apiError: ApiError = err.response?.data
@@ -148,6 +167,10 @@ export const usePhasesStore = defineStore('phases', () => {
           phases.value[index] = updatedPhase
         }
       })
+
+      // Invalidar caché del proyecto
+      const projectsStore = useProjectsStore()
+      projectsStore.invalidateProjectCache(projectId)
 
       return data
     } catch (err: any) {
