@@ -23,7 +23,7 @@ Este documento contiene la información esencial para que un agente de código (
 - **Auth store:** `src/stores/auth.ts` guarda tokens en `localStorage`, usa `FormData` para login y espera endpoints `/auth/login`, `/auth/refresh`, `/users/me`.
 
 4) Integración IA / Editor de texto
-- **Archivos relevantes:** `src/api/aiService.ts`, `src/components/editor/RichTextEditor.vue`, `src/composables/useAISuggestions.ts`, `docs/EDITOR_IA_INTEGRATION.md`.
+- **Archivos relevantes:** `src/api/aiService.ts`, `src/components/editor/PagedEditor.vue`, `src/composables/useAISuggestions.ts`, `docs/EDITOR_IA_INTEGRATION.md`.
 - **Endpoint usado:** `POST /ia/sugerencias` via `aiService.getSuggestion(...)`. La request incluye `text`, `document_content`, `bibliography`, `project_info`.
 - **Comportamiento UX:** atajo `Ctrl+Espacio` solicita sugerencia; `Tab` acepta; `Esc` rechaza. La integración actual hace autoguardado (cada 3s por defecto) y emite eventos `save`.
 
@@ -56,7 +56,7 @@ Este documento contiene la información esencial para que un agente de código (
 - `package.json` (scripts)
 - `src/api/client.ts` (token refresh, ApiValidationError)
 - `src/api/aiService.ts` (interfaz IA)
-- `src/components/editor/RichTextEditor.vue` y `docs/EDITOR_IA_INTEGRATION.md` (UX y flows de IA)
+- `src/components/editor/PagedEditor.vue` y `docs/EDITOR_IA_INTEGRATION.md` (UX y flows de IA)
 - `src/stores/auth.ts` (login/refresh/logout pattern)
 
 10) Qué evitar / notas útiles
