@@ -7,6 +7,9 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
   const suggestion = ref<string | null>(null)
   const error = ref<string | null>(null)
   const suggestionRange = ref<{ from: number; to: number } | null>(null)
+  
+  // Variable para guardar la posición de inserción (usando variable simple, no ref)
+  let savedInsertPosition: number | null = null
 
   /**
    * Transforma la bibliografía del formato frontend al formato esperado por la API
@@ -22,10 +25,14 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
 
   /**
    * Solicita una sugerencia de IA basada en el contenido del editor
+   * @param bibliography - Lista de bibliografías del proyecto
+   * @param projectInfo - Información del proyecto
+   * @param insertAt - Posición donde insertar la sugerencia. Si es undefined, usa la posición actual del cursor
    */
   async function requestSuggestion(
     bibliography: any[] = [],
-    projectInfo: any = null
+    projectInfo: any = null,
+    insertAt?: number
   ): Promise<void> {
     if (!editor.value) {
       console.warn('Editor no está disponible')
@@ -36,34 +43,52 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
     error.value = null
 
     try {
-      const { to } = editor.value.state.selection
+      const { from, to } = editor.value.state.selection
       const cursorPos = to
       const docSize = editor.value.state.doc.content.size
       const fullContent = editor.value.getText().trim()
+      
+      // Usar la posición explícita si se proporciona, sino usar la posición del cursor
+      if (insertAt !== undefined) {
+        savedInsertPosition = insertAt
+      } else {
+        // Si hay selección, usar 'from'; si es cursor simple, usar 'to'
+        savedInsertPosition = from === to ? to : from
+      }
 
       if (!fullContent) {
         error.value = 'Por favor, escribe algo de contenido antes de solicitar una sugerencia'
         return
       }
 
+      // Límite máximo para el campo text (el backend acepta hasta 1000)
+      const MAX_TEXT_LENGTH = 900
+      
       let contextText = ''
       const isAtEnd = cursorPos >= docSize - 2 || cursorPos >= fullContent.length - 10
       
       if (isAtEnd) {
-        const contextLength = 800
-        const startPos = Math.max(0, fullContent.length - contextLength)
+        // Al final del documento: tomar los últimos caracteres
+        const startPos = Math.max(0, fullContent.length - MAX_TEXT_LENGTH)
         contextText = fullContent.substring(startPos).trim()
       } else {
+        // En medio del documento: tomar texto antes del cursor
         const textBefore = editor.value.state.doc.textBetween(
-          Math.max(0, cursorPos - 500),
+          Math.max(0, cursorPos - MAX_TEXT_LENGTH),
           cursorPos,
           '\n'
         ).trim()
         contextText = textBefore
       }
 
+      // Fallback si contextText está vacío
       if (!contextText) {
         contextText = fullContent
+      }
+      
+      // Truncar para asegurar que no exceda el límite del backend
+      if (contextText.length > MAX_TEXT_LENGTH) {
+        contextText = contextText.substring(contextText.length - MAX_TEXT_LENGTH).trim()
       }
 
       const transformedBibliography = bibliography.length > 0 
@@ -95,7 +120,12 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
   function showInlineSuggestion(text: string): void {
     if (!editor.value || !text) return
 
-    const { from } = editor.value.state.selection
+    // Usar la posición guardada, o la posición actual del cursor como fallback
+    let from = savedInsertPosition
+    if (from === null || from === undefined) {
+      from = editor.value.state.selection.from
+    }
+    
     const htmlContent = convertTextToHtml(text)
 
     editor.value
@@ -113,6 +143,9 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
       .setTextSelection({ from, to: endPosition })
       .setMark('suggestion')
       .run()
+    
+    // Limpiar la posición guardada
+    savedInsertPosition = null
   }
 
   /**
@@ -182,6 +215,7 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
     suggestion.value = null
     suggestionRange.value = null
     error.value = null
+    savedInsertPosition = null
   }
 
   return {
