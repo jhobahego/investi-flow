@@ -34,6 +34,12 @@ export const useAuthStore = defineStore('auth', () => {
     } else {
       localStorage.removeItem('refreshToken')
     }
+    
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue)
+    } else {
+      localStorage.removeItem('refreshToken')
+    }
   }
 
   async function register(payload: UserCreate) {
