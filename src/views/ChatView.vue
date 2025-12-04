@@ -42,7 +42,7 @@
           <div class="flex-1 overflow-y-auto space-y-2">
             <!-- Loading skeleton -->
             <SkeletonLoader v-if="loadingConversations" type="conversation" :count="3" />
-            
+
             <!-- Conversaciones -->
             <div v-else>
               <div v-for="conv in conversations" :key="conv.id" @click="selectConversation(conv.id)"
@@ -58,7 +58,7 @@
                       {{ formatRelativeTime(conv.updated_at) }} · {{ conv.message_count }} mensajes
                     </p>
                   </div>
-                  <button @click.stop="handleDeleteConversation(conv.id)"
+                  <button @click.stop="openConfirmDialog(conv.id, conv.title)"
                     class="p-1 text-gray-400 hover:text-red-600 transition-colors">
                     <TrashIcon class="w-4 h-4" />
                   </button>
@@ -66,7 +66,8 @@
               </div>
 
               <!-- Empty state -->
-              <div v-if="conversations.length === 0 && !loadingConversations" class="text-center py-8 text-gray-500 text-sm">
+              <div v-if="conversations.length === 0 && !loadingConversations"
+                class="text-center py-8 text-gray-500 text-sm">
                 No hay conversaciones previas
               </div>
             </div>
@@ -147,6 +148,9 @@
         </div>
       </div>
     </div>
+    <ConfirmDialog :is-open="confirmDialogOpen" @confirm="handleConfirmDelete" @cancel="closeConfirmDialog"
+      :title="confirmDialogTitle" :message="confirmDialogMessage" :loading="confirmDialogLoading"
+      confirm-button-text="Eliminar" />
   </div>
 </template>
 
@@ -159,6 +163,7 @@ import { chatService } from '../api/chatService'
 import AppNavbar from '../components/layout/AppNavbar.vue'
 import LexiAvatar from '../components/ui/LexiAvatar.vue'
 import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import {
   ArrowLeftIcon,
   ChatBubbleLeftRightIcon,
@@ -195,6 +200,13 @@ const showSidebar = ref(true)
 const currentConversationId = ref<number | null>(null)
 const messagesContainer = ref<HTMLElement | null>(null)
 const loadingConversations = ref(false)
+
+// Estado para modal de confirmación
+const confirmDialogOpen = ref(false)
+const confirmDialogConversationId = ref<number | null>(null)
+const confirmDialogLoading = ref(false)
+const confirmDialogTitle = ref('Eliminar conversación')
+const confirmDialogMessage = ref('')
 
 // Computed
 const projectId = computed(() => Number(route.params.id))
@@ -283,9 +295,28 @@ const handleSendMessage = async () => {
   }
 }
 
-const handleDeleteConversation = async (conversationId: number) => {
-  if (!confirm('¿Estás seguro de eliminar esta conversación?')) return
+// Abre modal de confirmación para eliminar conversación
+const openConfirmDialog = (conversationId: number, title?: string) => {
+  confirmDialogConversationId.value = conversationId
+  confirmDialogTitle.value = 'Eliminar conversación'
+  confirmDialogMessage.value = title
+    ? `¿Estás seguro de eliminar la conversación "${title}"? Esta acción no se puede deshacer.`
+    : '¿Estás seguro de eliminar esta conversación? Esta acción no se puede deshacer.'
+  confirmDialogOpen.value = true
+}
 
+const closeConfirmDialog = () => {
+  confirmDialogOpen.value = false
+  confirmDialogConversationId.value = null
+  confirmDialogLoading.value = false
+}
+
+// Ejecuta la eliminación cuando el usuario confirma en el modal
+const handleConfirmDelete = async () => {
+  const conversationId = confirmDialogConversationId.value
+  if (!conversationId) return
+
+  confirmDialogLoading.value = true
   try {
     await chatService.deleteConversation(projectId.value, conversationId)
     await loadConversations()
@@ -295,9 +326,11 @@ const handleDeleteConversation = async (conversationId: number) => {
     }
 
     showSuccess('Conversación eliminada')
+    closeConfirmDialog()
   } catch (error) {
-    console.error('Error deleting conversation:', error)
+    console.error('Error deleting conversación:', error)
     showError('Error al eliminar la conversación')
+    confirmDialogLoading.value = false
   }
 }
 
