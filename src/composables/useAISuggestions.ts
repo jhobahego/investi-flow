@@ -9,6 +9,18 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
   const suggestionRange = ref<{ from: number; to: number } | null>(null)
 
   /**
+   * Transforma la bibliografía del formato frontend al formato esperado por la API
+   */
+  function transformBibliography(bibliography: any[]): any[] {
+    return bibliography.map(item => ({
+      autores: item.author || item.autores || '',
+      anio: item.year || item.anio || 0,
+      titulo: item.title || item.titulo || '',
+      tipo: item.type || item.tipo || 'articulo'
+    }))
+  }
+
+  /**
    * Solicita una sugerencia de IA basada en el contenido del editor
    */
   async function requestSuggestion(
@@ -54,10 +66,14 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
         contextText = fullContent
       }
 
+      const transformedBibliography = bibliography.length > 0 
+        ? transformBibliography(bibliography) 
+        : undefined
+
       const requestData: SuggestionRequest = {
         text: contextText,
         document_content: fullContent,
-        bibliography: bibliography.length > 0 ? bibliography : undefined,
+        bibliography: transformedBibliography,
         project_info: projectInfo || undefined
       }
 
