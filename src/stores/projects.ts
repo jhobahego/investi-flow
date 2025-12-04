@@ -120,18 +120,6 @@ export const useProjectsStore = defineStore('projects', () => {
         { headers }
       )
       
-      // If we get 304 Not Modified, use cached data
-      if (response.status === 304 && cached) {
-        // Update timestamp but keep data
-        projectCache.value.set(id, {
-          ...cached,
-          timestamp: Date.now()
-        })
-        currentProject.value = cached.data
-        currentProjectId.value = id
-        return cached.data
-      }
-      
       // New data received
       const data = response.data
       const etag = response.headers['etag'] || null
@@ -147,6 +135,19 @@ export const useProjectsStore = defineStore('projects', () => {
       currentProjectId.value = id
       return data
     } catch (err: any) {
+      // Handle 304 Not Modified - Axios treats this as an error or doesn't return it normally
+      if (err.response?.status === 304 && cached) {
+        console.log('Using cached data (304 Not Modified)')
+        // Update timestamp but keep data
+        projectCache.value.set(id, {
+          ...cached,
+          timestamp: Date.now()
+        })
+        currentProject.value = cached.data
+        currentProjectId.value = id
+        return cached.data
+      }
+      
       // If we have cached data and error is not critical, use cache
       if (cached && err.response?.status !== 404) {
         console.warn('Using cached data due to error:', err)
