@@ -1,4 +1,8 @@
 import apiClient from './client'
+import type { 
+  BibliographySearchRequest, 
+  BibliographySearchResponse 
+} from '../types'
 
 export interface BibliographyReference {
   autores: string
@@ -29,6 +33,14 @@ export const aiService = {
    */
   async getSuggestion(data: SuggestionRequest): Promise<SuggestionResponse> {
     const response = await apiClient.post('/ia/sugerencias', data)
+    return response.data
+  },
+
+  /**
+   * Busca bibliografía relevante usando IA
+   */
+  async searchBibliography(projectId: number, data: BibliographySearchRequest): Promise<BibliographySearchResponse> {
+    const response = await apiClient.post(`/proyectos/${projectId}/ia/bibliografias`, data)
     return response.data
   }
 }
