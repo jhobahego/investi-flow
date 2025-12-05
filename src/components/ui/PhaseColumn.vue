@@ -59,10 +59,10 @@
       </div>
     </div>
 
-    <div class="space-y-3 flex-1">
+    <div class="space-y-3 flex-1" ref="taskContainer">
       <!-- Loading skeleton -->
       <SkeletonLoader v-if="loadingTasks" type="card" :count="2" />
-      
+
       <!-- Task cards -->
       <template v-else>
         <TaskCard v-for="task in tasksInPhase" :key="task.id" :task="task" :has-attachment="hasTaskAttachment(task.id)"
@@ -182,14 +182,47 @@ const handleStartedDrag = (task: TaskResponse) => {
   emit('task-drag-start', task)
 }
 
+const taskContainer = ref<HTMLElement | null>(null)
+
 const handleDrop = (event: DragEvent) => {
   event.preventDefault()
   const taskIdRaw = event.dataTransfer?.getData('text/plain')
   const taskData: TaskResponse = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
 
   const taskId = taskData.id || (taskIdRaw ? Number(taskIdRaw) : null)
-  if (taskData?.phase_id !== props.phase.id) {
-    emit('task-drop', { taskId: Number(taskId), newPhaseId: props.phase.id })
+
+  if (!taskId) return
+
+  let newPosition = tasksInPhase.value.length
+
+  if (taskContainer.value) {
+    const taskElements = Array.from(taskContainer.value.children) as HTMLElement[]
+
+    for (let i = 0; i < taskElements.length; i++) {
+      const el = taskElements[i]
+      const rect = el.getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+
+      if (event.clientY < midY) {
+        newPosition = i
+        break
+      }
+    }
+  }
+
+  const currentTaskIndex = tasksInPhase.value.findIndex(t => t.id === taskId)
+  const isSamePhase = currentTaskIndex !== -1
+
+  if (isSamePhase && currentTaskIndex < newPosition) {
+    newPosition -= 1
+  }
+
+  if (taskData.phase_id !== props.phase.id) {
+    emit('task-drop', { taskId: Number(taskId), newPhaseId: props.phase.id, newPosition })
+  } else {
+    if (newPosition !== currentTaskIndex) {
+      emit('task-drop', { taskId: Number(taskId), newPhaseId: props.phase.id, newPosition })
+    }
   }
 }
 </script>
