@@ -715,16 +715,15 @@ const createTask = async () => {
 
 const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, newPhaseId: number }) => {
   try {
-    const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
-    if (updatedTask) {
-      if (updatedTask.phase_id) {
-        await tasksStore.getTasksByPhase(updatedTask.phase_id)
-      }
-      await tasksStore.getTasksByPhase(newPhaseId)
-      showSuccess('Tarea movida exitosamente')
-    }
+    // La actualización optimista ocurre dentro del store inmediatamente
+    // Esperamos la confirmación solo para mostrar el toast
+    await tasksStore.moveTaskToPhase(taskId, newPhaseId)
+    
+    // Mensaje de confirmación UNA VEZ el backend responde
+    showSuccess('Tarea movida exitosamente')
   } catch (err) {
     console.error('Error moving task:', err)
+    // El rollback ya ocurrió en el store, avisamos al usuario
     showError('Error al mover la tarea. Intenta nuevamente.')
   }
 }
