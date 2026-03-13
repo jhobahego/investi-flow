@@ -236,13 +236,36 @@ async function handleSearch() {
   hasSearched.value = true
 
   try {
-    // Construir query automática basada en el contexto
-    const query = `Bibliografía académica sobre: ${props.projectInfo?.name || 'investigación actual'}`
+    const projName = props.projectInfo?.name || 'investigación actual'
+    const projDesc = props.projectInfo?.description || ''
+    const projType = props.projectInfo?.research_type || ''
+    const docTitle = props.projectInfo?.name || ''
+
+    // Construir query automática estructurada basada en el contexto
+    let query = `Documentos académicos, artículos científicos y tesis sobre el tema: "${projName}".`
+    if (docTitle) {
+      query += ` En específico para el documento titulado: "${docTitle}".`
+    }
+    if (projDesc) {
+      query += ` Enfoque de la investigación: ${projDesc}.`
+    }
+    if (projType) {
+      query += ` Tipo de investigación: ${projType}.`
+    }
+    query += ` Busco referencias bibliográficas específicas con enlaces directos al documento.`
+
+    // Asegurar que enviamos un project_context completo y sin valores undefined que puedan romper el json
+    const projectContext = {
+      name: projName,
+      description: projDesc,
+      research_type: projType,
+      document_title: docTitle
+    };
 
     const response = await aiService.searchBibliography(props.projectId, {
       query: query,
       max_results: 5,
-      project_context: props.projectInfo,
+      project_context: projectContext,
       search_context: props.documentContext
     })
     searchResults.value = response.sources

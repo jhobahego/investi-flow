@@ -139,7 +139,8 @@ const bibliography = computed(() => bibliographyStore.bibliographies)
 const projectInfo = computed(() => ({
     name: currentProject.value?.name,
     description: currentProject.value?.description || undefined,
-    research_type: currentProject.value?.research_type || undefined
+    research_type: currentProject.value?.research_type || undefined,
+    document_title: documentTitle.value || undefined
 }))
 
 // LocalStorage key for document content
