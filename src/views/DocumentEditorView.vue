@@ -104,7 +104,7 @@ import { useAttachmentsStore } from '../stores/attachments'
 import { useBibliographyStore } from '../stores/bibliography'
 import PagedEditor from '../components/editor/PagedEditor.vue'
 import BibliographyPanel from '../components/editor/BibliographyPanel.vue'
-import { extractDocumentPages } from '../api/documentService'
+import { extractDocumentPages, updateDocumentContent } from '../api/documentService'
 
 const route = useRoute()
 const router = useRouter()
@@ -232,13 +232,20 @@ async function saveDocument() {
     error.value = null
 
     try {
-        // Guardar en localStorage como solución temporal
+        // Guardar en localStorage como solución temporal y backup
         const storageKey = getStorageKey()
         localStorage.setItem(storageKey, JSON.stringify(documentPages.value))
 
-        // Simular delay
-        await new Promise(resolve => setTimeout(resolve, 300))
-        console.log('✓ Documento guardado exitosamente')
+        // Obtener el attachment actual
+        const cacheKey = `${entityType.value}-${entityId.value}`
+        const attachment = attachmentsStore.attachments[cacheKey]
+
+        if (!attachment || !attachment.id) {
+            throw new Error('No se encontró el archivo adjunto para actualizar.')
+        }
+
+        // Enviar al backend para actualizar el .docx original
+        await updateDocumentContent(attachment.id, documentPages.value)
     } catch (err: any) {
         console.error('Error al guardar documento:', err)
         error.value = err.message || 'Error al guardar el documento'

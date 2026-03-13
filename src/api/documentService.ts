@@ -93,8 +93,26 @@ export async function getDocumentPreview(
   return response.data
 }
 
+/**
+ * Actualiza el contenido de un documento .docx en el servidor
+ * @param attachmentId - ID del adjunto/documento
+ * @param pages - Lista de páginas HTML a guardar
+ * @returns Mensaje de éxito
+ */
+export async function updateDocumentContent(
+  attachmentId: number,
+  pages: string[]
+): Promise<{ message: string }> {
+  const response = await apiClient.put(
+    `/documentos/${attachmentId}/content`,
+    { pages }
+  )
+  return response.data
+}
+
 export default {
   extractDocumentContent,
   extractDocumentPages,
-  getDocumentPreview
+  getDocumentPreview,
+  updateDocumentContent
 }
