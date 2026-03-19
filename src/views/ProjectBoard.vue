@@ -460,7 +460,6 @@ import AttachmentUpload from '../components/ui/AttachmentUpload.vue'
 import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import {
   ArrowLeftIcon,
-  UserPlusIcon,
   ExclamationTriangleIcon,
   DocumentTextIcon,
   PaperClipIcon

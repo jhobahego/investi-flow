@@ -451,7 +451,7 @@ function setupKeyboardShortcuts() {
 }
 
 // Watch
-watch(() => props.pages, (newPages, oldPages) => {
+watch(() => props.pages, (newPages) => {
     // Ignorar cambios que vienen del propio editor para evitar ciclo de recreación
     if (isUpdatingFromEditor.value) {
         return
@@ -471,7 +471,7 @@ watch(() => props.pages, (newPages, oldPages) => {
         
         // Solo actualizar si el contenido es realmente diferente
         if (currentContent !== newContent) {
-            currentEditor.value.commands.setContent(newContent, false)
+            currentEditor.value.commands.setContent(newContent, { emitUpdate: false })
         }
     } else if (!continuousView.value && !currentEditor.value) {
         createEditorForPage(currentPage.value - 1)
