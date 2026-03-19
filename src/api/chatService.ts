@@ -6,7 +6,7 @@ export const chatService = {
    * Obtiene todas las conversaciones de un proyecto
    */
   async getConversations(projectId: number): Promise<ConversationListItem[]> {
-    const response = await apiClient.get(`/ia/proyectos/${projectId}/conversaciones`)
+    const response = await apiClient.get(`/proyectos/${projectId}/conversaciones`)
     return response.data
   },
 
@@ -14,7 +14,7 @@ export const chatService = {
    * Obtiene una conversación específica con todos sus mensajes
    */
   async getConversation(projectId: number, conversationId: number): Promise<Conversation> {
-    const response = await apiClient.get(`/ia/proyectos/${projectId}/conversaciones/${conversationId}`)
+    const response = await apiClient.get(`/proyectos/${projectId}/conversaciones/${conversationId}`)
     return response.data
   },
 
@@ -22,7 +22,7 @@ export const chatService = {
    * Envía un mensaje al chat (crea conversación automáticamente si no existe)
    */
   async sendMessage(projectId: number, data: ChatRequest): Promise<ChatResponse> {
-    const response = await apiClient.post(`/ia/proyectos/${projectId}/chat`, data)
+    const response = await apiClient.post(`/proyectos/${projectId}/chat`, data)
     return response.data
   },
 
@@ -35,7 +35,7 @@ export const chatService = {
     title: string
   ): Promise<Conversation> {
     const response = await apiClient.patch(
-      `/ia/proyectos/${projectId}/conversaciones/${conversationId}`,
+      `/proyectos/${projectId}/conversaciones/${conversationId}`,
       { title }
     )
     return response.data
@@ -45,6 +45,6 @@ export const chatService = {
    * Elimina una conversación
    */
   async deleteConversation(projectId: number, conversationId: number): Promise<void> {
-    await apiClient.delete(`/ia/proyectos/${projectId}/conversaciones/${conversationId}`)
+    await apiClient.delete(`/proyectos/${projectId}/conversaciones/${conversationId}`)
   }
 }

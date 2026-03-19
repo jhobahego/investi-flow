@@ -23,7 +23,7 @@
       </header>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-primary-100 flex-shrink-0">
@@ -67,7 +67,7 @@
             </div>
             <div class="ml-4 min-w-0">
               <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Colaboradores</p>
-              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ totalCollaborators }}</p>
+              <p class="text-sm sm:text-base font-bold text-gray-900">Proximamente...</p>
             </div>
           </div>
         </div>

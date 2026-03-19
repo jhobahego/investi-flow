@@ -1,74 +1,97 @@
 <template>
-    <div class="min-h-screen bg-gray-100">
-        <div class="max-w-6xl mx-auto p-2 sm:p-4">
-            <!-- Header -->
-            <div class="bg-white rounded-lg shadow-sm mb-4 p-3 sm:p-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div class="min-h-screen bg-gray-100 flex flex-col h-screen overflow-hidden">
+        <!-- Header -->
+        <div class="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0 z-10">
+            <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 max-w-7xl mx-auto w-full">
+                <div class="flex items-center gap-4">
                     <button @click="goBack"
-                        class="flex items-center gap-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium text-sm sm:text-base self-start"
+                        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                         type="button">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        <span class="hidden sm:inline">Volver</span>
                     </button>
 
-                    <div class="flex-1 min-w-0">
-                        <h1 class="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                    <div class="min-w-0">
+                        <h1 class="text-lg font-bold text-gray-900 truncate max-w-xs sm:max-w-md">
                             {{ documentTitle }}
                         </h1>
-                        <p class="text-xs sm:text-sm text-gray-500 mt-1 truncate">
-                            Proyecto: {{ projectName }}
+                        <p class="text-xs text-gray-500 truncate">
+                            {{ projectName }}
                         </p>
                     </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button @click="showBibliography = !showBibliography"
+                        :class="['flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium', showBibliography ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100']"
+                        type="button">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span class="hidden sm:inline">Bibliografía</span>
+                    </button>
 
                     <button @click="saveDocument" :disabled="isSaving"
-                        class="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
+                        class="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed text-sm whitespace-nowrap"
                         type="button">
                         <span v-if="isSaving" class="animate-spin">⏳</span>
                         <span v-else>💾</span>
                         <span class="hidden sm:inline">{{ isSaving ? 'Guardando...' : 'Guardar' }}</span>
-                        <span class="sm:hidden">{{ isSaving ? '...' : 'Guardar' }}</span>
                     </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Editor -->
-            <div class="mb-4">
-                <!-- Mensaje informativo -->
-                <div
-                    class="info-banner mb-4 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-blue-800">
-                    <div class="flex items-start gap-2">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span><strong>Nota:</strong> El editor extrae automáticamente el contenido de archivos .docx
-                            desde el servidor. Los cambios se guardan automáticamente cada 3 segundos en el
-                            navegador.</span>
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden relative">
+            <!-- Editor Area -->
+            <div class="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-8" id="editor-container">
+                <div class="max-w-4xl mx-auto">
+                    <!-- Mensaje informativo -->
+                    <div
+                        class="info-banner mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span><strong>Nota:</strong> El editor extrae automáticamente el contenido de archivos .docx
+                                desde el servidor.</span>
+                        </div>
                     </div>
-                </div>
 
-                <PagedEditor :pages="documentPages" :project-id="projectId" :bibliography="bibliography"
-                    :project-info="projectInfo" @update:pages="documentPages = $event" @save="handleAutosavePages" />
-            </div>
-
-            <!-- Loading overlay -->
-            <div v-if="isLoading" class="loading-overlay">
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p class="mt-4 text-gray-600">Cargando documento...</p>
+                    <PagedEditor :pages="documentPages" :project-id="projectId" :bibliography="bibliography"
+                        :project-info="projectInfo" @update:pages="documentPages = $event"
+                        @save="handleAutosavePages" />
                 </div>
             </div>
 
-            <!-- Error -->
-            <div v-if="error" class="error-banner">
-                <span class="error-icon">⚠️</span>
-                <span>{{ error }}</span>
-                <button @click="error = null" class="close-error" type="button">✕</button>
+            <!-- Bibliography Sidebar -->
+            <div v-if="showBibliography"
+                class="w-80 bg-white border-l border-gray-200 flex-shrink-0 shadow-lg z-20 transition-all duration-300 ease-in-out absolute inset-y-0 right-0 sm:relative">
+                <BibliographyPanel :project-id="projectId" :project-info="projectInfo"
+                    :document-context="documentPages.join('\n')" />
             </div>
+        </div>
+
+        <!-- Loading overlay -->
+        <div v-if="isLoading" class="loading-overlay">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p class="mt-4 text-gray-600">Cargando documento...</p>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div v-if="error" class="error-banner">
+            <span class="error-icon">⚠️</span>
+            <span>{{ error }}</span>
+            <button @click="error = null" class="close-error" type="button">✕</button>
         </div>
     </div>
 </template>
@@ -78,19 +101,23 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../stores/projects'
 import { useAttachmentsStore } from '../stores/attachments'
+import { useBibliographyStore } from '../stores/bibliography'
 import PagedEditor from '../components/editor/PagedEditor.vue'
-import { extractDocumentPages } from '../api/documentService'
+import BibliographyPanel from '../components/editor/BibliographyPanel.vue'
+import { extractDocumentPages, updateDocumentContent } from '../api/documentService'
 
 const route = useRoute()
 const router = useRouter()
 const projectsStore = useProjectsStore()
 const attachmentsStore = useAttachmentsStore()
+const bibliographyStore = useBibliographyStore()
 
 // State
 const documentPages = ref<string[]>(['<p></p>'])
 const isLoading = ref(true)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
+const showBibliography = ref(false)
 
 // Route params
 const projectId = computed(() => Number(route.params.id))
@@ -106,16 +133,14 @@ const documentTitle = computed(() => {
     return attachment?.file_name || 'Nuevo Documento'
 })
 
-// Bibliography (from project)
-const bibliography = computed(() => {
-    // TODO: Fetch from bibliographies store when implemented
-    return []
-})
+// Bibliography (from store)
+const bibliography = computed(() => bibliographyStore.bibliographies)
 
 const projectInfo = computed(() => ({
     name: currentProject.value?.name,
-    description: currentProject.value?.description,
-    research_type: currentProject.value?.research_type
+    description: currentProject.value?.description || undefined,
+    research_type: currentProject.value?.research_type || undefined,
+    document_title: documentTitle.value || undefined
 }))
 
 // LocalStorage key for document content
@@ -136,6 +161,9 @@ async function loadDocument() {
             await projectsStore.fetchProjectById(projectId.value)
         }
 
+        // Cargar bibliografía
+        await bibliographyStore.fetchBibliographies(projectId.value)
+
         // 1. Intentar obtener el adjunto
         let document = null
         try {
@@ -155,9 +183,6 @@ async function loadDocument() {
                 if (pagesData.pages && pagesData.pages.length > 0) {
                     documentPages.value = pagesData.pages
                     console.log('✅ Contenido extraído del documento .docx del servidor')
-                    console.log('📄 Archivo:', pagesData.file_name)
-                    console.log('📊 Tamaño:', (pagesData.file_size / 1024).toFixed(2), 'KB')
-                    console.log('📄 Páginas:', pagesData.total_pages)
 
                     // Guardar en localStorage para acceso offline
                     const storageKey = getStorageKey()
@@ -166,15 +191,7 @@ async function loadDocument() {
                     return
                 }
             } catch (extractError: any) {
-                if (extractError.response?.status === 400) {
-                    // El archivo no es .docx o no se puede extraer
-                    console.warn('⚠️ El documento no es .docx o no se puede extraer contenido')
-                    console.warn('   Tipo de archivo:', document.file_type)
-                } else if (extractError.response?.status === 404) {
-                    console.warn('⚠️ Archivo no encontrado en el servidor')
-                } else {
-                    console.warn('⚠️ No se pudo extraer contenido del servidor:', extractError.message)
-                }
+                console.warn('⚠️ No se pudo extraer contenido del servidor:', extractError.message)
             }
         }
 
@@ -198,12 +215,10 @@ async function loadDocument() {
         // 4. Si hay documento pero no se pudo extraer, crear plantilla con el nombre
         if (document) {
             const fileName = document.file_name.replace(/\.[^/.]+$/, '')
-            documentPages.value = [`<h1>${fileName}</h1><p>Comienza a escribir el contenido de tu documento aquí...</p><p><br></p><h2>Sección 1</h2><p>Escribe aquí el contenido de la primera sección.</p>`]
-            console.log('📄 Plantilla creada con nombre del documento')
+            documentPages.value = [`<h1>${fileName}</h1><p>Comienza a escribir el contenido de tu documento aquí...</p>`]
         } else {
             // 5. No hay documento, crear uno nuevo vacío
             documentPages.value = ['<h1>Nuevo Documento</h1><p>Comienza a escribir tu documento aquí...</p>']
-            console.log('📝 Nuevo documento vacío creado')
         }
     } catch (err: any) {
         console.error('Error al cargar documento:', err)
@@ -218,31 +233,20 @@ async function saveDocument() {
     error.value = null
 
     try {
-        // Guardar en localStorage como solución temporal
+        // Guardar en localStorage como solución temporal y backup
         const storageKey = getStorageKey()
         localStorage.setItem(storageKey, JSON.stringify(documentPages.value))
 
-        console.log('Documento guardado en localStorage:', {
-            projectId: projectId.value,
-            entityType: entityType.value,
-            entityId: entityId.value,
-            totalPages: documentPages.value.length
-        })
+        // Obtener el attachment actual
+        const cacheKey = `${entityType.value}-${entityId.value}`
+        const attachment = attachmentsStore.attachments[cacheKey]
 
-        // TODO: Implementar guardado del contenido HTML en el backend
-        // Cuando el backend esté listo, descomentar esto:
-        /*
-        const response = await apiClient.patch(
-          `/documentos/${entityId.value}/content`,
-          { pages: documentPages.value }
-        )
-        */
+        if (!attachment || !attachment.id) {
+            throw new Error('No se encontró el archivo adjunto para actualizar.')
+        }
 
-        // Simular delay
-        await new Promise(resolve => setTimeout(resolve, 300))
-
-        // Mostrar mensaje de éxito en consola
-        console.log('✓ Documento guardado exitosamente')
+        // Enviar al backend para actualizar el .docx original
+        await updateDocumentContent(attachment.id, documentPages.value)
     } catch (err: any) {
         console.error('Error al guardar documento:', err)
         error.value = err.message || 'Error al guardar el documento'
@@ -252,12 +256,8 @@ async function saveDocument() {
 }
 
 function handleAutosavePages(pages: string[]) {
-    // Guardar automáticamente en localStorage
     const storageKey = getStorageKey()
     localStorage.setItem(storageKey, JSON.stringify(pages))
-    console.log('Autoguardado en localStorage:', pages.length, 'páginas')
-
-    // TODO: Cuando el backend esté listo, enviar a la API aquí
 }
 
 // Lifecycle

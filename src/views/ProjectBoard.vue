@@ -52,12 +52,12 @@
 
           <!-- Botones de acción -->
           <div class="flex flex-wrap items-center gap-2">
-            <button
+            <!-- <button
               class="text-gray-500 hover:text-gray-700 transition-colors p-2 sm:px-3 sm:py-2 rounded-md hover:bg-gray-100">
               <UserPlusIcon class="w-5 h-5" />
-            </button>
+            </button> -->
             <button @click="navigateToChat"
-              class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors flex items-center justify-center space-x-2 text-sm">
+              class="ml-12 flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors flex items-center justify-center space-x-2 text-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
@@ -460,7 +460,6 @@ import AttachmentUpload from '../components/ui/AttachmentUpload.vue'
 import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import {
   ArrowLeftIcon,
-  UserPlusIcon,
   ExclamationTriangleIcon,
   DocumentTextIcon,
   PaperClipIcon
@@ -715,16 +714,15 @@ const createTask = async () => {
 
 const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, newPhaseId: number }) => {
   try {
-    const updatedTask = await tasksStore.moveTaskToPhase(taskId, newPhaseId)
-    if (updatedTask) {
-      if (updatedTask.phase_id) {
-        await tasksStore.getTasksByPhase(updatedTask.phase_id)
-      }
-      await tasksStore.getTasksByPhase(newPhaseId)
-      showSuccess('Tarea movida exitosamente')
-    }
+    // La actualización optimista ocurre dentro del store inmediatamente
+    // Esperamos la confirmación solo para mostrar el toast
+    await tasksStore.moveTaskToPhase(taskId, newPhaseId)
+
+    // Mensaje de confirmación UNA VEZ el backend responde
+    showSuccess('Tarea movida exitosamente')
   } catch (err) {
     console.error('Error moving task:', err)
+    // El rollback ya ocurrió en el store, avisamos al usuario
     showError('Error al mover la tarea. Intenta nuevamente.')
   }
 }

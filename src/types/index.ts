@@ -304,3 +304,80 @@ export type ProjectCreatePayload = ProjectCreate
 export type ProjectUpdatePayload = ProjectUpdate
 export type TokenResponse = Token
 
+
+// --- BIBLIOGRAPHY TYPES ---
+export interface BibliographyResponse {
+  id: number
+  project_id: number
+  type: string
+  author: string
+  year: number | null
+  title: string
+  source: string | null
+  doi: string | null
+  url: string | null
+  volume: string | null
+  issue: string | null
+  pages: string | null
+  file_path: string | null
+  file_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BibliographyCreate {
+  type: string
+  author: string
+  year?: number | null
+  title: string
+  source?: string | null
+  doi?: string | null
+  url?: string | null
+  volume?: string | null
+  issue?: string | null
+  pages?: string | null
+}
+
+export interface BibliographyUpdate {
+  type?: string | null
+  author?: string | null
+  year?: number | null
+  title?: string | null
+  source?: string | null
+  doi?: string | null
+  url?: string | null
+  volume?: string | null
+  issue?: string | null
+  pages?: string | null
+}
+
+// --- AI BIBLIOGRAPHY SEARCH TYPES ---
+export interface BibliographySearchRequest {
+  query: string
+  max_results?: number
+  project_context?: {
+    name?: string
+    description?: string
+    research_type?: string
+  }
+  search_context?: string
+}
+
+export interface BibliographySource {
+  titulo: string
+  autores: string[]
+  anio: number | null
+  tipo: string
+  fuente: string
+  doi: string | null
+  url: string
+  resumen: string
+  relevancia: number
+}
+
+export interface BibliographySearchResponse {
+  sources: BibliographySource[]
+  model_used: string
+  total_found: number
+}
+

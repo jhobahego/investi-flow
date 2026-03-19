@@ -53,7 +53,7 @@
             <div class="toolbar-divider"></div>
 
             <!-- Botón de sugerencia IA -->
-            <button @click="handleAISuggestion" :disabled="isLoadingSuggestion || !currentEditor"
+            <button @click="handleAISuggestion(false)" :disabled="isLoadingSuggestion || !currentEditor"
                 class="ai-suggestion-btn" type="button" title="Obtener sugerencia de IA (Ctrl+Espacio)">
                 <span v-if="isLoadingSuggestion" class="animate-spin">⏳</span>
                 <span v-else>💡</span>
@@ -204,6 +204,9 @@ const continuousView = ref(false) // Vista continua vs vista por página
 // Editor por página
 const currentEditor = ref<Editor | undefined>(undefined)
 
+// Flag para evitar recrear el editor cuando el cambio viene del propio editor
+const isUpdatingFromEditor = ref(false)
+
 // Autosave
 const lastSaved = ref<string>('')
 const autosaveTimeout = ref<NodeJS.Timeout>()
@@ -250,9 +253,17 @@ function createEditorForPage(pageIndex: number) {
 }
 
 function updatePageContent(pageIndex: number, html: string) {
+    // Activar flag para que el watcher ignore este cambio
+    isUpdatingFromEditor.value = true
+    
     const newPages = [...props.pages]
     newPages[pageIndex] = html
     emit('update:pages', newPages)
+    
+    // Desactivar flag después de un pequeño delay para permitir que Vue procese el cambio
+    setTimeout(() => {
+        isUpdatingFromEditor.value = false
+    }, 10)
 }
 
 // AI Suggestions
@@ -311,22 +322,25 @@ function isActive(name: string, attrs?: any) {
     return currentEditor.value.isActive(name, attrs)
 }
 
-function handleAISuggestion() {
+function handleAISuggestion(fromKeyboard: boolean = false) {
     if (!currentEditor.value) return
 
-    // Primero enfocar el editor
-    currentEditor.value.chain().focus().run()
-
-    const { from, to } = currentEditor.value.state.selection
-    const docSize = currentEditor.value.state.doc.content.size
-
-    if ((from === 0 && to === 0) || from === to) {
-        const endPos = Math.max(1, docSize - 1)
-        currentEditor.value.chain().focus().setTextSelection(endPos).run()
-    }
-    setTimeout(() => {
+    if (fromKeyboard) {
+        // Ctrl+Space: Insertar sugerencia en la posición actual del cursor
+        // No pasar posición - requestSuggestion usará la posición actual del cursor
         requestSuggestion(props.bibliography || [], props.projectInfo || null)
-    }, 50)
+    } else {
+        // Botón: Insertar al final del documento
+        // Calcular la posición final y pasarla explícitamente
+        const docSize = currentEditor.value.state.doc.content.size
+        const endPos = Math.max(1, docSize - 1)
+        
+        // Enfocar el editor y mover cursor al final para feedback visual
+        currentEditor.value.chain().focus().setTextSelection(endPos).run()
+        
+        // Pasar la posición final explícitamente a requestSuggestion
+        requestSuggestion(props.bibliography || [], props.projectInfo || null, endPos)
+    }
 }
 
 function acceptSuggestion() {
@@ -410,10 +424,10 @@ function updateLastSaved() {
 // Keyboard shortcuts
 function setupKeyboardShortcuts() {
     const handleKeydown = (event: KeyboardEvent) => {
-        // Ctrl+Space para sugerencias
+        // Ctrl+Space para sugerencias (en posición del cursor)
         if (event.ctrlKey && event.code === 'Space') {
             event.preventDefault()
-            handleAISuggestion()
+            handleAISuggestion(true) // true = desde teclado, insertar en cursor
         }
 
         // Tab para aceptar sugerencia
@@ -437,14 +451,29 @@ function setupKeyboardShortcuts() {
 }
 
 // Watch
-watch(() => props.pages, () => {
+watch(() => props.pages, (newPages) => {
+    // Ignorar cambios que vienen del propio editor para evitar ciclo de recreación
+    if (isUpdatingFromEditor.value) {
+        return
+    }
+    
     // Si la página actual ya no existe, ir a la última página
     if (currentPage.value > props.pages.length) {
         currentPage.value = props.pages.length || 1
         pageInputValue.value = currentPage.value
     }
-    // Recrear el editor con el contenido actualizado solo si estamos en vista por páginas
-    if (!continuousView.value) {
+    
+    // Solo recrear el editor si el contenido cambió desde fuera (ej: carga de documento)
+    // y estamos en vista por páginas
+    if (!continuousView.value && currentEditor.value) {
+        const currentContent = currentEditor.value.getHTML()
+        const newContent = newPages[currentPage.value - 1] || '<p></p>'
+        
+        // Solo actualizar si el contenido es realmente diferente
+        if (currentContent !== newContent) {
+            currentEditor.value.commands.setContent(newContent, { emitUpdate: false })
+        }
+    } else if (!continuousView.value && !currentEditor.value) {
         createEditorForPage(currentPage.value - 1)
     }
 }, { deep: true })
