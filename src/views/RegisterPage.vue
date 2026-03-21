@@ -44,9 +44,14 @@
             <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">
               Número de teléfono
             </label>
-            <input id="phone_number" name="phone_number" type="tel" required v-model="form.phone_number"
-              class="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-              placeholder="+573001234567" />
+            <div class="flex">
+              <select disabled class="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm focus:outline-none cursor-not-allowed">
+                <option selected>🇨🇴 +57</option>
+              </select>
+              <input id="phone_number" name="phone_number" type="tel" required v-model="form.phone_number" maxlength="10"
+                class="flex-1 min-w-0 block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-none rounded-r-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                placeholder="3001234567" />
+            </div>
           </div>
 
           <div>
@@ -170,6 +175,21 @@ const handleRegister = async () => {
     return
   }
 
+  // Validación del tamaño del teléfono (exactamente 10)
+  const rawPhone = form.phone_number.trim()
+  if (rawPhone.length !== 10) {
+    error.value = 'El número de teléfono debe tener exactamente 10 caracteres'
+    return
+  }
+
+  const fullPhoneNumber = `+57${rawPhone}`
+
+  // Validación final del tamaño del teléfono (exactamente 13)
+  if (fullPhoneNumber.length !== 13) {
+    error.value = 'Error en el formato del teléfono, debe tener exactamente 13 caracteres'
+    return
+  }
+
   if (!form.acceptTerms) {
     error.value = 'Debes aceptar los términos y condiciones'
     return
@@ -180,7 +200,7 @@ const handleRegister = async () => {
       email: form.email,
       full_name: form.full_name,
       password: form.password,
-      phone_number: form.phone_number,
+      phone_number: fullPhoneNumber,
       university: form.university || undefined,
       research_group: form.research_group || undefined,
       career: form.career || undefined
