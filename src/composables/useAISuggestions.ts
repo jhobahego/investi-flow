@@ -16,10 +16,9 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
    */
   function transformBibliography(bibliography: any[]): any[] {
     return bibliography.map(item => ({
-      autores: item.author || item.autores || '',
-      anio: item.year || item.anio || 0,
-      titulo: item.title || item.titulo || '',
-      tipo: item.type || item.tipo || 'articulo'
+      author: item.author || item.autores || '',
+      title: item.title || item.titulo || '',
+      file_type: item.type || item.tipo || 'articulo'
     }))
   }
 
@@ -27,11 +26,13 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
    * Solicita una sugerencia de IA basada en el contenido del editor
    * @param bibliography - Lista de bibliografías del proyecto
    * @param projectInfo - Información del proyecto
+   * @param currentContext - Contexto actual de fase y tarea
    * @param insertAt - Posición donde insertar la sugerencia. Si es undefined, usa la posición actual del cursor
    */
   async function requestSuggestion(
     bibliography: any[] = [],
     projectInfo: any = null,
+    currentContext: any = null,
     insertAt?: number
   ): Promise<void> {
     if (!editor.value) {
@@ -96,10 +97,13 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
         : undefined
 
       const requestData: SuggestionRequest = {
-        text: contextText,
-        document_content: fullContent,
+        editor_state: {
+          text: contextText,
+          full_document_content: fullContent
+        },
         bibliography: transformedBibliography,
-        project_info: projectInfo || undefined
+        project_info: projectInfo || undefined,
+        current_context: currentContext || undefined
       }
 
       const response = await aiService.getSuggestion(requestData)
