@@ -66,7 +66,7 @@
                     </div>
 
                     <PagedEditor :pages="documentPages" :project-id="projectId" :bibliography="bibliography"
-                        :project-info="projectInfo" @update:pages="documentPages = $event"
+                        :project-info="projectInfo" :current-context="currentContext" @update:pages="documentPages = $event"
                         @save="handleAutosavePages" />
                 </div>
             </div>
@@ -142,6 +142,42 @@ const projectInfo = computed(() => ({
     research_type: currentProject.value?.research_type || undefined,
     document_title: documentTitle.value || undefined
 }))
+
+const currentPhase = computed(() => {
+    if (entityType.value === 'phase') {
+        return currentProject.value?.phases?.find(p => p.id === entityId.value)
+    } else if (entityType.value === 'task') {
+        return currentProject.value?.phases?.find(p => (p as any).tasks?.some((t: any) => t.id === entityId.value))
+    }
+    return undefined
+})
+
+const currentTask = computed(() => {
+    if (entityType.value === 'task') {
+        return (currentPhase.value as any)?.tasks?.find((t: any) => t.id === entityId.value)
+    }
+    return undefined
+})
+
+const currentContext = computed(() => {
+    const context: any = {}
+    
+    if (currentPhase.value) {
+        context.phase = {
+            id: String(currentPhase.value.id),
+            name: currentPhase.value.name
+        }
+    }
+    
+    if (currentTask.value) {
+        context.task = {
+            id: String(currentTask.value.id),
+            name: currentTask.value.name
+        }
+    }
+    
+    return Object.keys(context).length > 0 ? context : undefined
+})
 
 // LocalStorage key for document content
 const getStorageKey = () => `document_content_${entityType.value}_${entityId.value}`
