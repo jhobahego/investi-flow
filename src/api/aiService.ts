@@ -5,21 +5,36 @@ import type {
 } from '../types'
 
 export interface BibliographyReference {
-  autores: string
-  anio: number
-  titulo: string
-  tipo: string
+  author: string
+  title: string
+  file_type?: string
+}
+
+export interface SuggestionProjectInfo {
+  project_id: string
+  project_name: string
+  project_theme?: string
+}
+
+export interface SuggestionCurrentContext {
+  phase?: {
+    id: string
+    name: string
+  }
+  task?: {
+    id: string
+    name: string
+  }
 }
 
 export interface SuggestionRequest {
-  text: string
-  document_content: string
-  bibliography?: BibliographyReference[]
-  project_info?: {
-    name?: string
-    description?: string
-    research_type?: string
+  editor_state: {
+    text: string
+    full_document_content: string
   }
+  bibliography?: BibliographyReference[]
+  project_info?: SuggestionProjectInfo
+  current_context?: SuggestionCurrentContext
 }
 
 export interface SuggestionResponse {

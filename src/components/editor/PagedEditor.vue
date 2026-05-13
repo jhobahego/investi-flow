@@ -177,6 +177,7 @@ interface Props {
     projectId?: number
     bibliography?: any[]
     projectInfo?: any
+    currentContext?: any
     placeholder?: string
     autosave?: boolean
     autosaveDelay?: number
@@ -322,13 +323,23 @@ function isActive(name: string, attrs?: any) {
     return currentEditor.value.isActive(name, attrs)
 }
 
+function formatProjectInfo() {
+    return {
+        project_id: props.projectId ? String(props.projectId) : '',
+        project_name: props.projectInfo?.name || '',
+        project_theme: props.projectInfo?.research_type || props.projectInfo?.description
+    }
+}
+
 function handleAISuggestion(fromKeyboard: boolean = false) {
     if (!currentEditor.value) return
+
+    const formattedProjectInfo = formatProjectInfo()
 
     if (fromKeyboard) {
         // Ctrl+Space: Insertar sugerencia en la posición actual del cursor
         // No pasar posición - requestSuggestion usará la posición actual del cursor
-        requestSuggestion(props.bibliography || [], props.projectInfo || null)
+        requestSuggestion(props.bibliography || [], formattedProjectInfo, props.currentContext)
     } else {
         // Botón: Insertar al final del documento
         // Calcular la posición final y pasarla explícitamente
@@ -339,7 +350,7 @@ function handleAISuggestion(fromKeyboard: boolean = false) {
         currentEditor.value.chain().focus().setTextSelection(endPos).run()
         
         // Pasar la posición final explícitamente a requestSuggestion
-        requestSuggestion(props.bibliography || [], props.projectInfo || null, endPos)
+        requestSuggestion(props.bibliography || [], formattedProjectInfo, props.currentContext, endPos)
     }
 }
 
