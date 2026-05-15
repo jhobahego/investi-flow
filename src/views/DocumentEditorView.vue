@@ -105,6 +105,7 @@ import { useBibliographyStore } from '../stores/bibliography'
 import PagedEditor from '../components/editor/PagedEditor.vue'
 import BibliographyPanel from '../components/editor/BibliographyPanel.vue'
 import { extractDocumentPages, updateDocumentContent } from '../api/documentService'
+import type { BibliographyReference } from '../api/aiService'
 
 const route = useRoute()
 const router = useRouter()
@@ -134,7 +135,22 @@ const documentTitle = computed(() => {
 })
 
 // Bibliography (from store)
-const bibliography = computed(() => bibliographyStore.bibliographies)
+const bibliography = computed<BibliographyReference[]>(() =>
+    bibliographyStore.bibliographies.map((item) => {
+        const fileName = item.file_name ?? (item.file_path ? item.file_path.split('/').pop() || '' : '')
+
+        return {
+            id: item.id,
+            project_id: item.project_id,
+            author: item.author,
+            title: item.title,
+            anio: item.year ?? null,
+            file_name: fileName,
+            file_type: item.type || 'documento',
+            file_path: item.file_path ?? ''
+        }
+    })
+)
 
 const projectInfo = computed(() => ({
     name: currentProject.value?.name,

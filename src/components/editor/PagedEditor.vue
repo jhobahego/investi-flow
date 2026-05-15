@@ -171,11 +171,12 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { useAISuggestions } from '../../composables/useAISuggestions'
 import { SuggestionMark } from './SuggestionMark'
+import { BibliographyReference } from '../../api/aiService'
 
 interface Props {
     pages: string[]
     projectId?: number
-    bibliography?: any[]
+    bibliography?: BibliographyReference[]
     projectInfo?: any
     currentContext?: any
     placeholder?: string

@@ -5,9 +5,14 @@ import type {
 } from '../types'
 
 export interface BibliographyReference {
+  id: number
+  project_id: number
   author: string
   title: string
-  file_type?: string
+  anio?: number | null
+  file_name: string
+  file_type: string
+  file_path: string
 }
 
 export interface SuggestionProjectInfo {

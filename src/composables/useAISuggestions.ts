@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { aiService, type SuggestionRequest } from '../api/aiService'
+import { aiService, BibliographyReference, type SuggestionRequest } from '../api/aiService'
 import type { Editor } from '@tiptap/vue-3'
 
 export function useAISuggestions(editor: Ref<Editor | undefined>) {
@@ -14,11 +14,16 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
   /**
    * Transforma la bibliografía del formato frontend al formato esperado por la API
    */
-  function transformBibliography(bibliography: any[]): any[] {
+  function transformBibliography(bibliography: BibliographyReference[]): BibliographyReference[] {
     return bibliography.map(item => ({
-      author: item.author || item.autores || '',
-      title: item.title || item.titulo || '',
-      file_type: item.type || item.tipo || 'articulo'
+      id: item.id,
+      project_id: item.project_id,
+      author: item.author,
+      title: item.title,
+      anio: item.anio ?? null,
+      file_name: item.file_name,
+      file_type: item.file_type,
+      file_path: item.file_path
     }))
   }
 
@@ -30,7 +35,7 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
    * @param insertAt - Posición donde insertar la sugerencia. Si es undefined, usa la posición actual del cursor
    */
   async function requestSuggestion(
-    bibliography: any[] = [],
+    bibliography: BibliographyReference[] = [],
     projectInfo: any = null,
     currentContext: any = null,
     insertAt?: number
