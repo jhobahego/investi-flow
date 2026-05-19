@@ -216,7 +216,7 @@ const isUpdatingFromEditor = ref(false)
 
 // Autosave
 const lastSaved = ref<string>('')
-const autosaveTimeout = ref<NodeJS.Timeout>()
+const autosaveTimeout = ref<ReturnType<typeof setTimeout>>()
 
 // Crear editor para la página actual
 function createEditorForPage(pageIndex: number) {
