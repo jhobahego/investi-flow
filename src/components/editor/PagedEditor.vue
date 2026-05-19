@@ -171,14 +171,19 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { useAISuggestions } from '../../composables/useAISuggestions'
 import { SuggestionMark } from './SuggestionMark'
-import { BibliographyReference } from '../../api/aiService'
+import { 
+    type SuggestionAttachment,
+    type SuggestionProjectInfo,
+    type BibliographyReference,
+    type SuggestionCurrentContext
+} from '../../api/aiService'
 
 interface Props {
     pages: string[]
-    projectId?: number
+    projectId: number
     bibliography?: BibliographyReference[]
-    projectInfo?: any
-    currentContext?: any
+    projectInfo: SuggestionProjectInfo
+    currentContext?: SuggestionCurrentContext
     placeholder?: string
     autosave?: boolean
     autosaveDelay?: number
@@ -324,11 +329,22 @@ function isActive(name: string, attrs?: any) {
     return currentEditor.value.isActive(name, attrs)
 }
 
-function formatProjectInfo() {
+function formatProjectInfo(): SuggestionProjectInfo {
+    const suggestionAttachment: SuggestionAttachment = {
+        id: props.projectInfo.attachment_document?.id || -1,
+        project_id: props.projectId,
+        phase_id: props.projectInfo.attachment_document?.phase_id || null,
+        task_id: props.projectInfo.attachment_document?.task_id || null,
+        file_name: props.projectInfo.attachment_document?.file_name || '',
+        file_type: props.projectInfo.attachment_document?.file_type || '',
+        file_path: props.projectInfo.attachment_document?.file_path || ''
+    }
+    
     return {
-        project_id: props.projectId ? String(props.projectId) : '',
-        project_name: props.projectInfo?.name || '',
-        project_theme: props.projectInfo?.research_type || props.projectInfo?.description
+        project_id: props.projectId,
+        project_name: props.projectInfo?.project_name || '',
+        project_description: props.projectInfo?.project_description || '',
+        attachment_document: suggestionAttachment
     }
 }
 
