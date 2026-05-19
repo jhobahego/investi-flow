@@ -105,7 +105,7 @@ import { useBibliographyStore } from '../stores/bibliography'
 import PagedEditor from '../components/editor/PagedEditor.vue'
 import BibliographyPanel from '../components/editor/BibliographyPanel.vue'
 import { extractDocumentPages, updateDocumentContent } from '../api/documentService'
-import type { BibliographyReference } from '../api/aiService'
+import type { BibliographyReference, SuggestionProjectInfo } from '../api/aiService'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,10 +128,16 @@ const entityId = computed(() => Number(route.query.entityId) || projectId.value)
 // Project data
 const currentProject = computed(() => projectsStore.currentProject)
 const projectName = computed(() => currentProject.value?.name || 'Proyecto')
-const documentTitle = computed(() => {
+
+const currentAttachmentDocument = computed(() => {
     const cacheKey = `${entityType.value}-${entityId.value}`
-    const attachment = attachmentsStore.attachments[cacheKey]
-    return attachment?.file_name || 'Nuevo Documento'
+    return attachmentsStore.attachments[cacheKey] || null
+})
+const documentTitle = computed(() => {
+    if (currentAttachmentDocument.value) {
+        return currentAttachmentDocument.value.file_name.replace(/\.[^/.]+$/, '')
+    }
+    return 'Documento'
 })
 
 // Bibliography (from store)
@@ -152,11 +158,12 @@ const bibliography = computed<BibliographyReference[]>(() =>
     })
 )
 
-const projectInfo = computed(() => ({
-    name: currentProject.value?.name,
-    description: currentProject.value?.description || undefined,
-    research_type: currentProject.value?.research_type || undefined,
-    document_title: documentTitle.value || undefined
+const projectInfo = computed<SuggestionProjectInfo>(() => ({
+    project_id: currentProject.value?.id ?? projectId.value,
+    project_name: currentProject.value?.name ?? 'Proyecto',
+    project_description: currentProject.value?.description || undefined,
+    // research_type: currentProject.value?.research_type as ResearchType | undefined, // TODO: Agregar el campo ResearchType al request en el backend y mapearlo correctamente
+    attachment_document: currentAttachmentDocument.value || undefined
 }))
 
 const currentPhase = computed(() => {
