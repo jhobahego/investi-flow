@@ -2,6 +2,8 @@
 // TIPOS BASADOS EN LA API
 // ===============================
 
+import { SuggestionProjectInfo } from "../api/aiService"
+
 // --- ENUMS ---
 export enum ProjectStatus {
   PLANNING = 'planning',
@@ -355,11 +357,7 @@ export interface BibliographyUpdate {
 export interface BibliographySearchRequest {
   query: string
   max_results?: number
-  project_context?: {
-    name?: string
-    description?: string
-    research_type?: string
-  }
+  project_context?: SuggestionProjectInfo
   search_context?: string
 }
 
