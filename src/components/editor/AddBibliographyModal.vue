@@ -176,18 +176,14 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import Modal from '../ui/Modal.vue'
-import { aiService } from '../../api/aiService'
+import { aiService, type SuggestionProjectInfo } from '../../api/aiService'
 import type { BibliographyCreate, BibliographySource } from '../../types'
 
 const props = defineProps<{
   show: boolean
   loading?: boolean
   projectId: number
-  projectInfo?: {
-    name?: string
-    description?: string
-    research_type?: string
-  }
+  projectInfo?: SuggestionProjectInfo
   documentContext?: string
 }>()
 
@@ -226,7 +222,6 @@ function handleFileChange(event: Event) {
 
 function handleSubmit() {
   emit('save', { ...form }, selectedFile.value)
-  // Reset form logic could go here
 }
 
 async function handleSearch() {
@@ -236,10 +231,14 @@ async function handleSearch() {
   hasSearched.value = true
 
   try {
-    const projName = props.projectInfo?.name || 'investigación actual'
-    const projDesc = props.projectInfo?.description || ''
-    const projType = props.projectInfo?.research_type || ''
-    const docTitle = props.projectInfo?.name || ''
+    const {
+      project_id: projId,
+      project_name: projName = 'investigación actual',
+      project_description: projDesc = '',
+      attachment_document: projAttachment,
+    } = props.projectInfo || {}
+
+    const docTitle = projAttachment?.file_name || ''
 
     // Construir query automática estructurada basada en el contexto
     let query = `Documentos académicos, artículos científicos y tesis sobre el tema: "${projName}".`
@@ -249,18 +248,18 @@ async function handleSearch() {
     if (projDesc) {
       query += ` Enfoque de la investigación: ${projDesc}.`
     }
-    if (projType) {
-      query += ` Tipo de investigación: ${projType}.`
-    }
-    query += ` Busco referencias bibliográficas específicas con enlaces directos al documento.`
+    // if (projType) { // TODO: Ver si se puede pasar el tipo de investigación de alguna forma
+    //   query += ` Tipo de investigación: ${projType}.`
+    // }
+    query += ` Busco referencias bibliográficas específicas con enlaces directos al documento, importante que sean de bases de datos académicas reconocidas como Scopus, Web of Science, Google Scholar, Dialnet, Redalyc, SciELO, etc.`
 
     // Asegurar que enviamos un project_context completo y sin valores undefined que puedan romper el json
     const projectContext = {
-      name: projName,
-      description: projDesc,
-      research_type: projType,
-      document_title: docTitle
-    };
+      project_id: projId || -1,
+      project_name: projName,
+      project_description: projDesc,
+      attachment_document: projAttachment
+    }
 
     const response = await aiService.searchBibliography(props.projectId, {
       query: query,
