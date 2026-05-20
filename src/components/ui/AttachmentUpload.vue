@@ -291,7 +291,6 @@ function handleReplaceFileSelect(event: Event) {
     showConfirmModal.value = true
   }
   // Limpiar input
-  // Limpiar input
   target.value = ''
 }
 
