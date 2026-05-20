@@ -73,6 +73,61 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     }
   }
 
+  async function replaceDocument(
+    entityType: 'project' | 'phase' | 'task',
+    entityId: number,
+    file: File
+  ): Promise<AttachmentResponse> {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      let endpoint = ''
+      switch (entityType) {
+        case 'project':
+          endpoint = `/proyectos/${entityId}/documentos`
+          break
+        case 'phase':
+          endpoint = `/fases/${entityId}/documentos`
+          break
+        case 'task':
+          endpoint = `/tareas/${entityId}/documentos`
+          break
+      }
+
+      const { data } = await apiClient.put<AttachmentResponse>(
+        endpoint,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+
+      // Actualizar cache
+      const cacheKey = getCacheKey(entityType, entityId)
+      attachments.value[cacheKey] = data
+
+      return data
+    } catch (err: any) {
+      if (err instanceof ApiValidationError) {
+        const firstError = err.getFirstError()
+        error.value = firstError ? firstError.errorMessage : 'Error al reemplazar documento'
+      } else {
+        error.value = err.response?.data?.detail || 'Error al reemplazar documento'
+      }
+      console.error(`Failed to replace document for ${entityType} ${entityId}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+
   async function getDocument(
     entityType: 'project' | 'phase' | 'task',
     entityId: number
@@ -207,6 +262,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     // Actions
     clearError,
     uploadDocument,
+    replaceDocument,
     getDocument,
     downloadDocument,
     clearCache,
