@@ -82,9 +82,10 @@
           </button>
 
           <!-- Botón reemplazar -->
-          <button type="button" class="p-2 text-gray-400 hover:text-red-600 transition-colors"
-            title="Reemplazar documento (funcionalidad en desarrollo)" @click="replaceDocument" disabled>
-            <ArrowPathIcon class="w-4 h-4" />
+          <button type="button" class="p-2 transition-colors"
+            :class="loading ? 'text-gray-400 cursor-not-allowed' : 'text-orange-600 hover:text-orange-700'"
+            :title="loading ? 'Cargando...' : 'Reemplazar documento'" @click="replaceDocument" :disabled="loading">
+            <ArrowPathIcon class="w-4 h-4" :class="{ 'animate-spin': loading }" />
           </button>
         </div>
       </div>
@@ -194,11 +195,17 @@ async function handleFileUpload(file: File, isReplace = false) {
       if (!confirmed) return
     }
 
-    const uploadedAttachment = await attachmentsStore.uploadDocument(
-      props.entityType,
-      props.entityId,
-      file
-    )
+    const uploadedAttachment = isReplace
+      ? await attachmentsStore.replaceDocument(
+          props.entityType,
+          props.entityId,
+          file
+        )
+      : await attachmentsStore.uploadDocument(
+          props.entityType,
+          props.entityId,
+          file
+        )
 
     if (isReplace) {
       emit('attachment-updated', uploadedAttachment)
