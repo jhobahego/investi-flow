@@ -104,6 +104,43 @@
     <!-- Input oculto para reemplazar archivo -->
     <input ref="replaceFileInput" type="file" class="hidden" accept=".pdf,.docx" @change="handleReplaceFileSelect"
       :disabled="loading" />
+
+    <!-- Modal de confirmación personalizado para reemplazar documento -->
+    <Teleport to="body">
+      <Modal :is-open="showConfirmModal" @close="cancelReplacement" title="Confirmar Reemplazo" size="sm">
+        <div class="space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="flex-shrink-0 bg-orange-100 p-2 rounded-full">
+              <ExclamationTriangleIcon class="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">
+                ¿Reemplazar documento existente?
+              </p>
+              <p class="text-xs text-gray-500 mt-1">
+                Estás a punto de reemplazar <span class="font-medium text-gray-700">"{{ currentAttachment?.file_name }}"</span> con <span class="font-medium text-gray-700">"{{ pendingFile?.name }}"</span>.
+              </p>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500">
+            Esta acción actualizará el archivo actual y mantendrá la vinculación y el historial correspondientes.
+          </p>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end space-x-3 w-full">
+            <button type="button" @click="cancelReplacement"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
+              Cancelar
+            </button>
+            <button type="button" @click="confirmReplacement"
+              class="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-md transition-colors duration-200 shadow-sm">
+              Reemplazar
+            </button>
+          </div>
+        </template>
+      </Modal>
+    </Teleport>
   </div>
 </template>
 
@@ -125,8 +162,10 @@ import {
   DocumentTextIcon,
   ArrowDownTrayIcon,
   EyeIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
+import Modal from './Modal.vue'
 
 interface Props {
   entityType: 'project' | 'phase' | 'task'
@@ -155,6 +194,8 @@ const dragCounter = ref(0)
 const error = ref<string | null>(null)
 const isDownloading = ref(false)
 const loadingDocument = ref(false)
+const showConfirmModal = ref(false)
+const pendingFile = ref<File | null>(null)
 
 // Computed
 const loading = computed(() => attachmentsStore.loading)
@@ -176,7 +217,33 @@ function replaceDocument() {
   replaceFileInput.value?.click()
 }
 
-async function handleFileUpload(file: File, isReplace = false) {
+function cancelReplacement() {
+  pendingFile.value = null
+  showConfirmModal.value = false
+}
+
+async function confirmReplacement() {
+  if (!pendingFile.value) return
+  
+  const file = pendingFile.value
+  pendingFile.value = null
+  showConfirmModal.value = false
+  
+  clearError()
+  
+  try {
+    const uploadedAttachment = await attachmentsStore.replaceDocument(
+      props.entityType,
+      props.entityId,
+      file
+    )
+    emit('attachment-updated', uploadedAttachment)
+  } catch (err: any) {
+    error.value = err.message || 'Error al reemplazar el documento'
+  }
+}
+
+async function handleFileUpload(file: File) {
   clearError()
 
   // Validar archivo
@@ -187,31 +254,12 @@ async function handleFileUpload(file: File, isReplace = false) {
   }
 
   try {
-    // Mostrar confirmación si es reemplazo
-    if (isReplace && props.currentAttachment) {
-      const confirmed = confirm(
-        `¿Estás seguro de que quieres reemplazar "${props.currentAttachment.file_name}"?`
-      )
-      if (!confirmed) return
-    }
-
-    const uploadedAttachment = isReplace
-      ? await attachmentsStore.replaceDocument(
-          props.entityType,
-          props.entityId,
-          file
-        )
-      : await attachmentsStore.uploadDocument(
-          props.entityType,
-          props.entityId,
-          file
-        )
-
-    if (isReplace) {
-      emit('attachment-updated', uploadedAttachment)
-    } else {
-      emit('attachment-uploaded', uploadedAttachment)
-    }
+    const uploadedAttachment = await attachmentsStore.uploadDocument(
+      props.entityType,
+      props.entityId,
+      file
+    )
+    emit('attachment-uploaded', uploadedAttachment)
   } catch (err: any) {
     error.value = err.message || 'Error al subir el documento'
   }
@@ -231,8 +279,18 @@ function handleReplaceFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    handleFileUpload(file, true)
+    // Validar archivo primero
+    const validation = validateFile(file)
+    if (!validation.isValid) {
+      error.value = validation.error || 'Archivo no válido'
+      target.value = ''
+      return
+    }
+
+    pendingFile.value = file
+    showConfirmModal.value = true
   }
+  // Limpiar input
   // Limpiar input
   target.value = ''
 }
