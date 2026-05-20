@@ -72,14 +72,11 @@ import { useBibliographyStore } from '../../stores/bibliography'
 import AddBibliographyModal from './AddBibliographyModal.vue'
 import ConfirmDialog from '../ui/ConfirmDialog.vue'
 import type { BibliographyCreate } from '../../types'
+import { type SuggestionProjectInfo } from '../../api/aiService'
 
 const props = defineProps<{
   projectId: number
-  projectInfo?: {
-    name?: string
-    description?: string
-    research_type?: string
-  }
+  projectInfo?: SuggestionProjectInfo
   documentContext?: string
 }>()
 

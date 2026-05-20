@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { aiService, BibliographyReference, type SuggestionRequest } from '../api/aiService'
+import { aiService, type SuggestionCurrentContext, type BibliographyReference, type SuggestionProjectInfo, type SuggestionRequest } from '../api/aiService'
 import type { Editor } from '@tiptap/vue-3'
 
 export function useAISuggestions(editor: Ref<Editor | undefined>) {
@@ -36,8 +36,8 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
    */
   async function requestSuggestion(
     bibliography: BibliographyReference[] = [],
-    projectInfo: any = null,
-    currentContext: any = null,
+    projectInfo?: SuggestionProjectInfo,
+    currentContext?: SuggestionCurrentContext,
     insertAt?: number
   ): Promise<void> {
     if (!editor.value) {

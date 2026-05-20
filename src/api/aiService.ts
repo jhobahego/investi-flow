@@ -15,10 +15,20 @@ export interface BibliographyReference {
   file_path: string
 }
 
+export interface SuggestionAttachment {
+  id: number
+  task_id?: number | null
+  phase_id?: number | null
+  project_id?: number | null
+  file_name: string
+  file_type: string
+  file_path: string
+}
 export interface SuggestionProjectInfo {
-  project_id: string
+  project_id: number
   project_name: string
-  project_theme?: string
+  project_description?: string
+  attachment_document?: SuggestionAttachment
 }
 
 export interface SuggestionCurrentContext {
