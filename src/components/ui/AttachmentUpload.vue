@@ -133,9 +133,9 @@
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
               Cancelar
             </button>
-            <button type="button" @click="confirmReplacement"
-              class="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-md transition-colors duration-200 shadow-sm">
-              Reemplazar
+            <button type="button" @click="confirmReplacement" :disabled="loading"
+              class="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-md transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-orange-600">
+              {{ loading ? 'Reemplazando...' : 'Reemplazar' }}
             </button>
           </div>
         </template>
