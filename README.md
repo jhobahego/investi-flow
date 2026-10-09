@@ -97,6 +97,48 @@ npm run preview
 npm run type-check
 ```
 
+### Pruebas
+
+Suite actual: 13 especificaciones Vitest (164 pruebas superadas + 2 omitidas documentadas) + 2 especificaciones Playwright (4/4 en verde).
+
+| Script | Uso |
+| --- | --- |
+| `npm run test:unit` | Modo observador de Vitest (unitarias, componentes e integración). |
+| `npm run test:unit:run` | Ejecución única de Vitest en CI/local. |
+| `npm run test:coverage` | Ejecución única con reporte de cobertura v8 (línea base, sin umbrales estrictos). |
+| `npm run test:e2e` | Playwright E2E en Chromium (usa el `webServer` de la configuración). |
+| `npm run test:e2e:ui` | Playwright en modo interactivo para depuración local. |
+| `npm run test:e2e:report` | Muestra el último reporte HTML de Playwright. |
+
+Capas y ubicación:
+
+```bash
+# Capa 1 — unitarias: tests/unit/
+# Capa 2 — componentes Vue: tests/components/
+# Capa 3 — stores Pinia: tests/unit/stores/
+# Capa 4 — integración con API simulada (MSW): tests/integration/
+npm run test:unit:run
+
+# Cobertura global y por archivo (estrategia §9: línea base sin umbral alto inicial)
+npm run test:coverage
+
+# Capa 5 — E2E con Playwright: tests/e2e/playwright/
+npm run test:e2e
+```
+
+Local frente a CI (Playwright):
+
+```bash
+# Local sin navegadores empaquetados pero con Chrome del sistema:
+PLAYWRIGHT_CHROME=1 npm run test:e2e
+
+# CI: usa el Chromium empaquetado de Playwright, sin variables adicionales:
+# npx playwright install --with-deps chromium
+# npm run test:e2e
+```
+
+Los escenarios de negocio en lenguaje neutral (reutilizables entre herramientas) viven en `tests/e2e/scenarios/` (ver `tests/e2e/scenarios/README.md`). La carpeta `tests/e2e/testerarmy/` queda reservada para una futura adopción de TesterArmy y permanece vacía a propósito.
+
 ## 📊 Estado Actual
 
 ### ✅ Implementado

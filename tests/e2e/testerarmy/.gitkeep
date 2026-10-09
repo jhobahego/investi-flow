@@ -1,0 +1,3 @@
+# Reserved for future TesterArmy e2e adoption (see estrategia section 10).
+# This folder stays intentionally empty: Playwright specs live in
+# tests/e2e/playwright/ and tool-neutral scenarios in tests/e2e/scenarios/.
