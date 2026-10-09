@@ -134,8 +134,8 @@ describe('getFileExtension', () => {
     expect(result).toBe('.PDF')
   })
 
-  it.skip('returns an empty string for a filename without extension', () => {
-    // BUG REAL en src (NO corregir aquí): attachmentUtils.ts:61
+  it('returns an empty string for a filename without extension', () => {
+    // Original it.skip reason preserved: BUG REAL en src (NO corregir aquí): attachmentUtils.ts:61
     // `filename.slice(filename.lastIndexOf('.'))` con lastIndexOf === -1
     // equivale a `slice(-1)` y devuelve el último carácter ('README' -> 'E').
     // Evidencia: node -e "console.log('README'.slice('README'.lastIndexOf('.')))" -> "E".

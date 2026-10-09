@@ -145,7 +145,7 @@ export const useTasksStore = defineStore('tasks', () => {
       }
     } catch (err: any) {
       const apiError: ApiError = err.response?.data
-      error.value = apiError.detail || 'Error al eliminar tarea'
+      error.value = apiError?.detail || 'Error al eliminar tarea'
       console.error(`Failed to delete task ${taskId}:`, err)
       throw err
     } finally {
