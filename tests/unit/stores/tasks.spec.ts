@@ -312,7 +312,8 @@ describe('tasks store', () => {
     expect(store.loading).toBe(false)
   })
 
-  it.skip('deleteTask with a network error without response crashes reading apiError.detail (src/stores/tasks.ts:148)', async () => {
+  it('deleteTask with a network error without response crashes reading apiError.detail (src/stores/tasks.ts:148)', async () => {
+    // Original it.skip reason preserved: catch block reads `apiError.detail` on undefined.
     // Arrange
     seedTasks([makeTask()])
     mockedDelete.mockRejectedValueOnce(new Error('Network Error'))

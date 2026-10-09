@@ -58,7 +58,9 @@ export function formatFileSize(bytes: number): string {
  * Obtiene la extensión de un archivo
  */
 export function getFileExtension(filename: string): string {
-  return filename.slice(filename.lastIndexOf('.'))
+  const dotIndex = filename.lastIndexOf('.')
+  if (dotIndex === -1) return ''
+  return filename.slice(dotIndex)
 }
 
 /**
@@ -104,7 +106,8 @@ export function truncateFileName(fileName: string, maxLength: number = 25): stri
   if (fileName.length <= maxLength) return fileName
   
   const extension = getFileExtension(fileName)
-  const nameWithoutExt = fileName.slice(0, fileName.lastIndexOf('.'))
+  const dotIndex = fileName.lastIndexOf('.')
+  const nameWithoutExt = dotIndex === -1 ? fileName : fileName.slice(0, dotIndex)
   const truncatedName = nameWithoutExt.slice(0, maxLength - extension.length - 3)
   
   return `${truncatedName}...${extension}`
