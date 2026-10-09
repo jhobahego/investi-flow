@@ -35,7 +35,7 @@ No incluye: actualizar Vite 5 → 6 ni Vitest 5 (se usa Vitest 3.2.x a propósit
 
 ## Checklist (IDs estables)
 
-- [ ] **T0 — Infraestructura de test (Capa 0, §§1–3).** Route: delegated direct (writer trigger: 5+ archivos nuevos/editados).
+- [x] **T0 — Infraestructura de test (Capa 0, §§1–3).** Route: delegated direct (writer trigger: 5+ archivos nuevos/editados).
   - Instalar: `vitest@^3.2.4 @vitest/coverage-v8@^3.2.4 @vue/test-utils@^2 jsdom msw @playwright/test`; `npx playwright install chromium` (solo chromium).
   - Estructura `tests/{setup.ts,mocks/,unit/,components/,integration/,e2e/playwright/,e2e/scenarios/}`.
   - Bloque `test` en `vite.config.ts` (include unit/components/integration, jsdom, setupFiles, clear/restoreMocks, coverage v8 con include `src/**/*.{ts,vue}`, exclude `src/main.ts` y `*.d.ts`).
@@ -43,7 +43,7 @@ No incluye: actualizar Vite 5 → 6 ni Vitest 5 (se usa Vitest 3.2.x a propósit
   - `playwright.config.ts` (Chromium, baseURL 127.0.0.1:5173, webServer `npm run dev`).
   - Un smoke spec mínimo que pruebe el runner.
   - Acceptance: `test:unit:run` en verde, `type-check` y `build` en verde.
-- [ ] **T1 — Unitarias (Capa 1, §4).** Route: delegated direct. Suites Arrange–Act–Assert para `src/lib/dateUtils.ts`, `src/lib/attachmentUtils.ts`, `src/lib/utils.ts` (normales, límites, inválidos/errores). Acceptance: specs en verde + coverage de esos archivos.
+- [x] **T1 — Unitarias (Capa 1, §4).** Route: delegated direct. Suites Arrange–Act–Assert para `src/lib/dateUtils.ts`, `src/lib/attachmentUtils.ts`, `src/lib/utils.ts` (normales, límites, inválidos/errores). Acceptance: specs en verde + coverage de esos archivos.
 - [ ] **T2 — Componentes Vue (Capa 2, §5).** Route: delegated direct. Contrato público (props/render, interacción, validación, emits, carga/vacío/error) de `SearchBar.vue`, `Modal.vue`/`ConfirmDialog.vue`, `AttachmentUpload.vue` con `mount`. Acceptance: specs en verde sin acoplarse a internos.
 - [ ] **T3 — Stores Pinia (Capa 3, §6).** Route: delegated direct. Pinia fresca por test, acciones reales: `search` (éxito/vacío/error/limpieza), `tasks` (getters y transiciones incl. optimistas con rollback), `auth` (login/logout/error). Mockear `src/api/client.ts`, no axios. Acceptance: specs en verde, sin contaminación entre casos.
 - [ ] **T4 — Integración con MSW (Capa 4, §7).** Route: delegated direct. Servidor MSW en `tests/setup.ts` + `tests/mocks/{handlers,server}.ts`; flujos componente+store+router (búsqueda: éxito/vacío/401/500; navegación con guard). Restablece handlers/mocks por test. Acceptance: set pequeño en verde, simulando solo el borde HTTP.
@@ -57,7 +57,8 @@ Cada delegación recibe su `## Allowed edit surfaces` exacta; por defecto nada f
 ## Progress
 
 - 2026-10-08: rama creada; baseline type-check + build OK; doc creado (8/8 pendientes).
-- T0: pending. T1: pending. T2: pending. T3: pending. T4: pending. T5: pending. T6: pending.
+- T0 done (`815ab10`): infra completa; `test:unit:run` 1/1 verde; type-check y build verdes. Desvíos: `msw@^2` pineado (msw 3 exige Vite ≥ 6); `playwright install chromium` blocked — Playwright 1.64 no soporta la plataforma (hay Chrome del sistema en `/usr/bin/google-chrome`; T5 usará `channel: 'chrome'` o executablePath). T1: pending. T2: pending. T3: pending. T4: pending. T5: pending. T6: pending.
+- T1 done (commit pendiente): 64 passed + 1 skipped. HALLAZGO (no corregido, fuera de scope): `src/lib/attachmentUtils.ts:61` `getFileExtension('README')` devuelve `'E'` en vez de `''` (`slice(-1)` cuando no hay punto); corrompe `truncateFileName` con nombres largos sin extensión. Test documentado como `it.skip`. Proponer fix al usuario, no aplicar en silencio.
 
 ## Verification evidence
 
