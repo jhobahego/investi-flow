@@ -351,7 +351,7 @@ describe('getDownloadUrl', () => {
 })
 
 describe('validateFile', () => {
-  it('accepts a valid PDF file', () => {
+  it('rejects a PDF file: only DOCX is allowed for the editor', () => {
     // Arrange
     const file = new File(['content'], 'report.pdf', { type: 'application/pdf' })
 
@@ -359,7 +359,8 @@ describe('validateFile', () => {
     const result = validateFile(file)
 
     // Assert
-    expect(result).toEqual({ isValid: true })
+    expect(result.isValid).toBe(false)
+    expect(result.error).toContain('Solo se admiten archivos .docx')
   })
 
   it('accepts a valid DOCX file', () => {
@@ -375,9 +376,11 @@ describe('validateFile', () => {
     expect(result).toEqual({ isValid: true })
   })
 
-  it('accepts an uppercase extension with an allowed MIME type', () => {
+  it('accepts an uppercase DOCX extension with an allowed MIME type', () => {
     // Arrange
-    const file = new File(['content'], 'REPORT.PDF', { type: 'application/pdf' })
+    const file = new File(['content'], 'REPORT.DOCX', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
 
     // Act
     const result = validateFile(file)
@@ -388,8 +391,8 @@ describe('validateFile', () => {
 
   it('accepts a file of exactly the maximum size', () => {
     // Arrange
-    const file = new File([new Uint8Array(MAX_FILE_SIZE)], 'exact.pdf', {
-      type: 'application/pdf',
+    const file = new File([new Uint8Array(MAX_FILE_SIZE)], 'exact.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     })
 
     // Act
@@ -401,8 +404,8 @@ describe('validateFile', () => {
 
   it('rejects a file larger than the maximum size', () => {
     // Arrange
-    const file = new File([new Uint8Array(MAX_FILE_SIZE + 1)], 'big.pdf', {
-      type: 'application/pdf',
+    const file = new File([new Uint8Array(MAX_FILE_SIZE + 1)], 'big.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     })
 
     // Act
@@ -427,7 +430,9 @@ describe('validateFile', () => {
 
   it('rejects a disallowed extension even with an allowed MIME type', () => {
     // Arrange
-    const file = new File(['content'], 'report.png', { type: 'application/pdf' })
+    const file = new File(['content'], 'report.png', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
 
     // Act
     const result = validateFile(file)
@@ -446,7 +451,9 @@ describe('validateFile', () => {
 
     // Assert
     expect(max).toBe(expectedMax)
-    expect(ALLOWED_FILE_TYPES).toContain('application/pdf')
-    expect(ALLOWED_EXTENSIONS).toEqual(['.pdf', '.docx'])
+    expect(ALLOWED_FILE_TYPES).toEqual([
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ])
+    expect(ALLOWED_EXTENSIONS).toEqual(['.docx'])
   })
 })
