@@ -19,6 +19,7 @@ interface ProjectCache {
 
 export const useProjectsStore = defineStore('projects', () => {
   const projects = ref<ProjectResponse[]>([])
+  const archivedProjects = ref<ProjectResponse[]>([])
   const currentProject = ref<ProjectWithPhases | null>(null)
   const currentProjectId = ref<number | null>(null)
   const loading = ref(false)
@@ -183,7 +184,8 @@ export const useProjectsStore = defineStore('projects', () => {
         research_type: data.research_type,
         category: data.category,
         created_at: data.created_at,
-        updated_at: data.updated_at
+        updated_at: data.updated_at,
+        deleted_at: data.deleted_at ?? null
       }
 
       projects.value.unshift(newProjectListItem)
@@ -225,7 +227,8 @@ export const useProjectsStore = defineStore('projects', () => {
           research_type: data.research_type,
           category: data.category,
           created_at: data.created_at,
-          updated_at: data.updated_at
+          updated_at: data.updated_at,
+          deleted_at: data.deleted_at ?? null
         }
         projects.value[index] = updatedProjectListItem
       }
@@ -245,23 +248,84 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function deleteProject(id: number): Promise<void> {
+  async function fetchArchived() {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.get<ProjectResponse[]>('/proyectos/archived')
+      archivedProjects.value = data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al cargar proyectos archivados'
+      console.error('Failed to fetch archived projects:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function archive(id: number): Promise<void> {
     loading.value = true
     error.value = null
     try {
       await apiClient.delete(`/proyectos/${id}`)
 
-      // Remover de la lista
+      // Remove from the active list
       projects.value = projects.value.filter(p => p.id !== id)
 
-      // Limpiar proyecto actual si es el mismo
+      // Clear current project if it is the same
+      if (currentProjectId.value === id) {
+        currentProject.value = null
+        currentProjectId.value = null
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al archivar proyecto'
+      console.error(`Failed to archive project ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteProject(id: number): Promise<void> {
+    // Deprecated alias: deleting now archives (see archive)
+    return archive(id)
+  }
+
+  async function restore(id: number): Promise<ProjectResponse> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await apiClient.post<ProjectResponse>(`/proyectos/${id}/restore`)
+
+      // Remove from the archived list
+      archivedProjects.value = archivedProjects.value.filter(p => p.id !== id)
+      return data
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || 'Error al restaurar proyecto'
+      console.error(`Failed to restore project ${id}:`, err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function hardDelete(id: number): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.delete(`/proyectos/${id}/permanent`)
+
+      // Remove from the archived list
+      archivedProjects.value = archivedProjects.value.filter(p => p.id !== id)
+
+      // Clear current project if it is the same
       if (currentProjectId.value === id) {
         currentProject.value = null
         currentProjectId.value = null
       }
     } catch (err: any) {
       error.value = err.response?.data?.detail || 'Error al eliminar proyecto'
-      console.error(`Failed to delete project ${id}:`, err)
+      console.error(`Failed to permanently delete project ${id}:`, err)
       throw err
     } finally {
       loading.value = false
@@ -325,6 +389,7 @@ export const useProjectsStore = defineStore('projects', () => {
   return {
     // State
     projects,
+    archivedProjects,
     currentProject,
     currentProjectId,
     loading,
@@ -341,11 +406,18 @@ export const useProjectsStore = defineStore('projects', () => {
     invalidateProjectCache,
     clearProjectCache,
     fetchProjects,
+    fetchArchived,
     fetchProjectById,
     fetchProjectWithPhases,
     createProject,
     updateProject,
+    archive,
+    archiveProject: archive,
     deleteProject,
+    restore,
+    restoreProject: restore,
+    hardDelete,
+    hardDeleteProject: hardDelete,
     uploadProjectDocument,
     getProjectDocument
   }
