@@ -34,3 +34,6 @@ coverage/
 
 # Local Netlify folder
 .netlify
+
+# Local notes (stale docx-validation doc removed, see project-archiving)
+TODO.md
