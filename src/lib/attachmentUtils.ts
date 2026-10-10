@@ -3,11 +3,14 @@ import { FileType } from '../types'
 // Tamaño máximo permitido: 10MB
 export const MAX_FILE_SIZE = 10 * 1024 * 1024
 
-// Tipos de archivo permitidos
-export const ALLOWED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+// Tipos de archivo permitidos.
+// Upload is docx-only: the backend is the source of truth (extraction/editing
+// endpoints reject non-.docx). Allowed lists stay centralized here so a future
+// PDF->viewer / DOCX->editor split only touches these constants.
+export const ALLOWED_FILE_TYPES = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 
 // Extensiones permitidas
-export const ALLOWED_EXTENSIONS = ['.pdf', '.docx']
+export const ALLOWED_EXTENSIONS = ['.docx']
 
 /**
  * Valida si un archivo es válido según tipo y tamaño
@@ -25,7 +28,7 @@ export function validateFile(file: File): { isValid: boolean; error?: string } {
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return {
       isValid: false,
-      error: 'Tipo de archivo no permitido. Solo se permiten archivos PDF y DOCX'
+      error: 'Tipo de archivo no permitido. Solo se admiten archivos .docx para edición en el editor'
     }
   }
 
@@ -34,7 +37,7 @@ export function validateFile(file: File): { isValid: boolean; error?: string } {
   if (!ALLOWED_EXTENSIONS.includes(extension)) {
     return {
       isValid: false,
-      error: 'Extensión de archivo no permitida. Solo se permiten archivos .pdf y .docx'
+      error: 'Extensión de archivo no permitida. Solo se admiten archivos .docx para edición en el editor'
     }
   }
 
