@@ -18,7 +18,7 @@
         'border-primary-400 bg-primary-50': isDragOver,
         'opacity-50 cursor-not-allowed': loading
       }" @drop="handleDrop" @dragover="handleDragOver" @dragenter="handleDragEnter" @dragleave="handleDragLeave">
-      <input ref="fileInput" type="file" class="hidden" accept=".pdf,.docx" @change="handleFileSelect"
+      <input ref="fileInput" type="file" class="hidden" accept=".docx" @change="handleFileSelect"
         :disabled="loading" />
 
       <div v-if="!loading" class="space-y-2">
@@ -31,7 +31,7 @@
             </button>
           </p>
           <p class="text-xs text-gray-500 mt-1">
-            Solo archivos PDF y DOCX, máximo 10MB
+            Formatos admitidos: .docx, máximo 10MB
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@
     </div>
 
     <!-- Input oculto para reemplazar archivo -->
-    <input ref="replaceFileInput" type="file" class="hidden" accept=".pdf,.docx" @change="handleReplaceFileSelect"
+    <input ref="replaceFileInput" type="file" class="hidden" accept=".docx" @change="handleReplaceFileSelect"
       :disabled="loading" />
 
     <!-- Modal de confirmación personalizado para reemplazar documento -->
@@ -153,6 +153,7 @@ import type { AttachmentResponse } from '../../types'
 import {
   validateFile,
   formatFileSize,
+  getFileExtension,
   getFileIcon,
   getFileTypeColor,
   truncateFileName
@@ -354,6 +355,13 @@ async function downloadDocument() {
 
 function viewDocument() {
   if (!props.currentAttachment) return
+
+  // El editor solo admite .docx (el backend rechaza otros formatos al extraer).
+  // Los adjuntos legacy no-docx muestran error visible y no navegan.
+  if (getFileExtension(props.currentAttachment.file_name).toLowerCase() !== '.docx') {
+    error.value = 'Este archivo no se puede editar en el editor. Solo se admiten archivos .docx.'
+    return
+  }
 
   // Navegar a la vista del editor
   router.push({
