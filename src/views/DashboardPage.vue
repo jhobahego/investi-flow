@@ -78,6 +78,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <h2 class="text-xl font-semibold text-gray-900">Mis Proyectos</h2>
           <div class="flex items-center space-x-4">
+            <router-link to="/archived"
+              class="text-sm font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap">
+              Proyectos Archivados
+            </router-link>
             <select v-model="filterStatus"
               class="w-full sm:w-auto rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
               <option value="">Todos los estados</option>
@@ -167,10 +171,10 @@
       </template>
     </Modal>
 
-    <!-- Delete Project Confirmation -->
-    <ConfirmDialog :is-open="showDeleteModal" :loading="projectsStore.loading" title="Eliminar Proyecto"
-      :message="`¿Estás seguro que deseas eliminar el proyecto '${projectToDelete?.name}'? Esta acción no se puede deshacer.`"
-      :confirm-text="projectToDelete?.name" confirm-button-text="Eliminar Proyecto" @confirm="confirmDeleteProject"
+    <!-- Archive Project Confirmation -->
+    <ConfirmDialog :is-open="showDeleteModal" :loading="projectsStore.loading" title="Archivar Proyecto"
+      :message="`¿Estás seguro que deseas archivar el proyecto '${projectToDelete?.name}'? Podrás restaurarlo desde Proyectos Archivados.`"
+      :confirm-text="projectToDelete?.name" confirm-button-text="Archivar Proyecto" @confirm="confirmDeleteProject"
       @cancel="cancelDeleteProject" />
   </div>
 </template>
@@ -264,13 +268,13 @@ const confirmDeleteProject = async () => {
   if (!projectToDelete.value) return
 
   try {
-    await projectsStore.deleteProject(projectToDelete.value.id)
-    showSuccess('Proyecto eliminado exitosamente')
+    await projectsStore.archive(projectToDelete.value.id)
+    showSuccess('Proyecto archivado')
     showDeleteModal.value = false
     projectToDelete.value = null
   } catch (error) {
-    console.error('Error deleting project:', error)
-    showError('Error al eliminar el proyecto. Intenta nuevamente.')
+    console.error('Error archiving project:', error)
+    showError('Error al archivar el proyecto. Intenta nuevamente.')
   }
 }
 
