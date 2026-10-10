@@ -58,6 +58,47 @@ export const searchServerErrorHandler = http.get(SEARCH_URL, () => {
   return HttpResponse.json({ detail: 'Error interno del servidor. Por favor, intenta nuevamente.' }, { status: 500 })
 })
 
+function renameFixture(id: number, name: string): ProjectResponse {
+  return {
+    id,
+    name,
+    description: `Description ${id}`,
+    research_type: null,
+    institution: null,
+    research_group: null,
+    category: null,
+    status: ProjectStatus.PLANNING,
+    created_at: '2024-01-01T00:00:00.000Z',
+    updated_at: '2024-01-02T00:00:00.000Z',
+  }
+}
+
+/**
+ * Override via server.use(): PUT /proyectos/:id succeeds and echoes the
+ * trimmed name back, mirroring the backend ProjectUpdate contract.
+ */
+export const renameProjectHandler = http.put(
+  `${ENV.API_URL}/proyectos/:id`,
+  async ({ params, request }) => {
+    const id = Number(params.id)
+    const body = (await request.json().catch(() => ({}))) as { name?: unknown }
+    const raw = typeof body?.name === 'string' ? body.name : ''
+    const name = raw.trim() || `Project ${id}`
+    return HttpResponse.json<ProjectResponse>(renameFixture(id, name))
+  },
+)
+
+/** Override via server.use(): PUT /proyectos/:id fails with 500 Server Error. */
+export const renameProjectErrorHandler = http.put(
+  `${ENV.API_URL}/proyectos/:id`,
+  () => {
+    return HttpResponse.json(
+      { detail: 'Error interno del servidor. Por favor, intenta nuevamente.' },
+      { status: 500 },
+    )
+  },
+)
+
 // Base handler list consumed by tests/mocks/server.ts: success with results.
 // Per-test scenarios use server.use() with the override handlers above
 // (server.resetHandlers() after each test is already global in tests/setup.ts).

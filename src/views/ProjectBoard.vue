@@ -44,7 +44,14 @@
               <ArrowLeftIcon class="w-5 h-5" />
             </button>
             <div class="min-w-0 flex-1">
-              <h1 class="text-xl sm:text-2xl font-bold text-gray-900 truncate">{{ projectsStore.currentProject.name }}
+              <input v-if="isEditingName" ref="renameInput" v-model="draftName" type="text" maxlength="255"
+                aria-label="Nombre del proyecto" :disabled="isSavingName"
+                class="w-full max-w-full text-xl sm:text-2xl font-bold text-gray-900 bg-white border border-primary-500 rounded-md px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-75"
+                @keydown="handleRenameKeydown" @blur="saveProjectName" />
+              <h1 v-else @click="startRename" @keydown.enter="startRename" role="button" tabindex="0"
+                title="Haz clic para renombrar" aria-label="Renombrar proyecto"
+                class="text-xl sm:text-2xl font-bold text-gray-900 truncate cursor-pointer rounded px-1 -mx-1 hover:bg-gray-200/70 transition-colors">{{
+                  projectsStore.currentProject.name }}
               </h1>
               <p class="text-sm sm:text-base text-gray-600 truncate">{{ projectsStore.currentProject.description }}</p>
             </div>
@@ -448,7 +455,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../stores/projects'
 import { useTasksStore } from '../stores/tasks'
@@ -505,6 +512,76 @@ const projectDocument = ref<AttachmentResponse | null>(null)
 
 // Obtener todas las tareas del proyecto actual
 const currentTasks = computed(() => tasksStore.tasks)
+
+// Renombrado inline del proyecto (estilo Trello)
+const isEditingName = ref(false)
+const draftName = ref('')
+const isSavingName = ref(false)
+const renameInput = ref<HTMLInputElement | null>(null)
+
+const startRename = () => {
+  if (!projectsStore.currentProject || isSavingName.value) return
+  draftName.value = projectsStore.currentProject.name
+  isEditingName.value = true
+  nextTick(() => {
+    renameInput.value?.focus()
+    renameInput.value?.select()
+  })
+}
+
+const cancelRename = () => {
+  if (projectsStore.currentProject) {
+    draftName.value = projectsStore.currentProject.name
+  }
+  isEditingName.value = false
+}
+
+const handleRenameKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    saveProjectName()
+  } else if (event.key === 'Escape') {
+    cancelRename()
+  }
+}
+
+const saveProjectName = async () => {
+  if (!isEditingName.value || isSavingName.value) return
+  const project = projectsStore.currentProject
+  if (!project) {
+    isEditingName.value = false
+    return
+  }
+  const trimmed = draftName.value.trim()
+  if (!trimmed) {
+    showError('El nombre del proyecto no puede estar vacío')
+    isEditingName.value = false
+    return
+  }
+  if (trimmed === project.name) {
+    isEditingName.value = false
+    return
+  }
+  if (trimmed.length > 255) {
+    showError('El nombre del proyecto no puede superar los 255 caracteres')
+    return
+  }
+  const previousName = project.name
+  isSavingName.value = true
+  try {
+    await projectsStore.updateProject(project.id, { name: trimmed })
+    showSuccess('Proyecto renombrado exitosamente')
+    projectsStore.invalidateProjectCache(project.id)
+    isEditingName.value = false
+  } catch (err) {
+    console.error('Error renaming project:', err)
+    draftName.value = previousName
+    isEditingName.value = false
+    showError('Error al renombrar el proyecto. Intenta nuevamente.')
+  } finally {
+    isSavingName.value = false
+  }
+}
 
 const handleCreatePhase = async () => {
   if (!newPhase.value.name.trim()) return
