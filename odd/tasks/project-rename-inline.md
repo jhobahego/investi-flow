@@ -24,7 +24,7 @@ Explicit user request 2026-10-10. Completes TODO.md §2 frontend.
 
 ## Checklist
 - [x] R1 Branch `feat/project-rename-inline` from `main` + RED tests (store PUT + component inline behavior)
-- [ ] R2 Inline edit UI in `ProjectBoard.vue` (toggle, save/cancel, validation, toast)
+- [x] R2 Inline edit UI in `ProjectBoard.vue` (toggle, save/cancel, validation, toast)
 - [ ] R3 GREEN verification (type-check, unit, build) + TODO/docs update
 
 ## Authorized scope
@@ -57,7 +57,12 @@ Explicit user request 2026-10-10. Completes TODO.md §2 frontend.
 
 ## Progress
 - 2026-10-10: explorer mapped detail/store/contract (ProjectBoard.vue:47, store updateProject:209-213, zero callers). Parent spot-checked ProjectBoard.vue:41-51.
-- 2026-10-10 R1: branched `feat/project-rename-inline` from `origin/main`; added PUT mocks (`renameProjectHandler`, `renameProjectErrorHandler`) in `tests/mocks/handlers.ts`, `tests/unit/stores/project-rename.spec.ts` (5 tests), `tests/components/ProjectBoardRename.spec.ts` (6 tests).
+- 2026-10-10 R1: branched `feat/project-rename-inline` from `origin/main`; added PUT mocks (`renameProjectHandler`, `renameProjectErrorHandler`) in `tests/mocks/handlers.ts`, `tests/unit/stores/project-rename.spec.ts` (5 tests), `tests/components/ProjectBoardRename.spec.ts` (6 tests). Commit `d4e527b`.
+- 2026-10-10 R2: Trello-style toggle in `ProjectBoard.vue` (h1 with hint → autofocus+select input; Enter/blur save with trim, unchanged/empty guards, 255 cap; Esc cancel+restore; toasts; `invalidateProjectCache` on success) + thin trim wrapper in `updateProject` (`src/stores/projects.ts`). No `deleted_at` touch — archived listings unaffected.
+
+## Verification evidence
+- R1 RED: `npx vitest run tests/unit/stores/project-rename.spec.ts tests/components/ProjectBoardRename.spec.ts` → 2 files failed, 7 failed / 4 passed (all 6 component tests fail — no inline UI yet; store trim test fails — store sends raw name; 4 store PUT/sync tests pass on existing behavior).
+- R2 GREEN (focused): same command → 2 files passed, 11 passed / 11.
 
 ## Verification evidence
 - R1 RED: `npx vitest run tests/unit/stores/project-rename.spec.ts tests/components/ProjectBoardRename.spec.ts` → 2 files failed, 7 failed / 4 passed (all 6 component tests fail — no inline UI yet; store trim test fails — store sends raw name; 4 store PUT/sync tests pass on existing behavior).

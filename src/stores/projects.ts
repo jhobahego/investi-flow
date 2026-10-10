@@ -212,7 +212,11 @@ export const useProjectsStore = defineStore('projects', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await apiClient.put<ProjectResponse>(`/proyectos/${id}`, projectData)
+      const payload: ProjectUpdate = { ...projectData }
+      if (typeof payload.name === 'string') {
+        payload.name = payload.name.trim()
+      }
+      const { data } = await apiClient.put<ProjectResponse>(`/proyectos/${id}`, payload)
 
       // Actualizar en la lista de proyectos
       const index = projects.value.findIndex(p => p.id === id)
