@@ -1,8 +1,8 @@
 <template>
   <div
     class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-primary-300 relative group">
-    <!-- Delete button -->
-    <button @click.stop="$emit('delete', project)"
+    <!-- Delete button (active projects only, hover-only) -->
+    <button v-if="!archived" @click.stop="$emit('delete', project)"
       class="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
       title="Eliminar proyecto">
       <TrashIcon class="w-4 h-4" />
@@ -36,6 +36,18 @@
           {{ formatDate(project.updated_at) }}
         </span>
       </div>
+
+      <!-- Archived mode actions: always visible (not hover-only) -->
+      <div v-if="archived" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4">
+        <button @click.stop="$emit('restore', project)"
+          class="flex-1 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
+          Restaurar
+        </button>
+        <button @click.stop="$emit('hard-delete', project)"
+          class="flex-1 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200">
+          Eliminar Definitivamente
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -48,10 +60,14 @@ const props = defineProps({
   project: {
     type: Object,
     required: true
+  },
+  archived: {
+    type: Boolean,
+    default: false
   }
 })
 
-defineEmits(['click', 'delete'])
+defineEmits(['click', 'delete', 'restore', 'hard-delete'])
 
 const statusClasses = computed(() => {
   const statusMap = {
