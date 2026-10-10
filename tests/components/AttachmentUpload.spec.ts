@@ -54,6 +54,28 @@ function pdfFile(name = 'informe.pdf'): File {
   return new File(['dummy-content'], name, { type: 'application/pdf' })
 }
 
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+function docxAttachment(overrides: Partial<AttachmentResponse> = {}): AttachmentResponse {
+  return {
+    id: 7,
+    file_name: 'informe.docx',
+    file_type: FileType.DOCX,
+    file_size: 2048,
+    file_path: 'uploads/informe.docx',
+    project_id: 1,
+    phase_id: null,
+    task_id: null,
+    created_at: '2026-10-01T10:00:00Z',
+    updated_at: '2026-10-01T10:00:00Z',
+    ...overrides,
+  }
+}
+
+function docxFile(name = 'informe.docx'): File {
+  return new File(['dummy-content'], name, { type: DOCX_MIME })
+}
+
 async function mountUpload(props: Record<string, unknown> = {}) {
   const wrapper = mount(AttachmentUpload, { props: { ...baseProps, ...props } })
   await flushPromises()
@@ -143,13 +165,34 @@ describe('AttachmentUpload', () => {
     expect(wrapper.text()).not.toContain('Arrastra tu documento aquí')
   })
 
+  it('restricts both file inputs to .docx only', async () => {
+    // Arrange & Act
+    const wrapper = await mountUpload()
+
+    // Assert: upload input + replace input (always rendered) are docx-only
+    const inputs = wrapper.findAll('input[type="file"]')
+    expect(inputs).toHaveLength(2)
+    for (const input of inputs) {
+      expect(input.attributes('accept')).toBe('.docx')
+    }
+  })
+
+  it('tells the user that only .docx files up to 10MB are supported', async () => {
+    // Arrange & Act
+    const wrapper = await mountUpload()
+
+    // Assert
+    expect(wrapper.text()).toContain('Formatos admitidos: .docx')
+    expect(wrapper.text()).toContain('10MB')
+  })
+
   it('uploads a valid file selected via the file input and emits attachment-uploaded', async () => {
     // Arrange
-    const uploaded = pdfAttachment()
+    const uploaded = docxAttachment()
     attachmentsStoreMock.uploadDocument.mockResolvedValueOnce(uploaded)
     const wrapper = await mountUpload()
     const input = wrapper.find('input[type="file"]')
-    setInputFiles(input, [pdfFile()])
+    setInputFiles(input, [docxFile()])
 
     // Act
     await input.trigger('change')
@@ -160,24 +203,40 @@ describe('AttachmentUpload', () => {
     const [entityType, entityId, file] = attachmentsStoreMock.uploadDocument.mock.calls[0]
     expect(entityType).toBe('project')
     expect(entityId).toBe(1)
-    expect((file as File).name).toBe('informe.pdf')
+    expect((file as File).name).toBe('informe.docx')
     expect(wrapper.emitted('attachment-uploaded')).toHaveLength(1)
     expect(wrapper.emitted('attachment-uploaded')![0]).toEqual([uploaded])
   })
 
   it('uploads a valid file dropped onto the drop zone', async () => {
     // Arrange
-    attachmentsStoreMock.uploadDocument.mockResolvedValueOnce(pdfAttachment())
+    attachmentsStoreMock.uploadDocument.mockResolvedValueOnce(docxAttachment())
     const wrapper = await mountUpload()
     const dropZone = wrapper.find('.border-dashed')
 
     // Act
-    await dropZone.trigger('drop', { dataTransfer: { files: [pdfFile('tesis.pdf')] } })
+    await dropZone.trigger('drop', { dataTransfer: { files: [docxFile('tesis.docx')] } })
     await flushPromises()
 
     // Assert
     expect(attachmentsStoreMock.uploadDocument).toHaveBeenCalledTimes(1)
     expect(wrapper.emitted('attachment-uploaded')).toHaveLength(1)
+  })
+
+  it('rejects a PDF selected via the file input with a visible error and no upload', async () => {
+    // Arrange: backend is docx-only, so PDFs are rejected early
+    const wrapper = await mountUpload()
+    const input = wrapper.find('input[type="file"]')
+    setInputFiles(input, [pdfFile()])
+
+    // Act
+    await input.trigger('change')
+    await flushPromises()
+
+    // Assert
+    expect(attachmentsStoreMock.uploadDocument).not.toHaveBeenCalled()
+    expect(wrapper.emitted('attachment-uploaded')).toBeUndefined()
+    expect(wrapper.find('div.mt-2.text-red-600').text()).toContain('Solo se admiten archivos .docx')
   })
 
   it('shows a visible validation error and skips upload for a disallowed file type', async () => {
@@ -200,8 +259,8 @@ describe('AttachmentUpload', () => {
     // Arrange: real validateFile rejects files over 10 MB
     const wrapper = await mountUpload()
     const input = wrapper.find('input[type="file"]')
-    const big = new File([new ArrayBuffer(11 * 1024 * 1024)], 'grande.pdf', {
-      type: 'application/pdf',
+    const big = new File([new ArrayBuffer(11 * 1024 * 1024)], 'grande.docx', {
+      type: DOCX_MIME,
     })
     setInputFiles(input, [big])
 
@@ -219,7 +278,7 @@ describe('AttachmentUpload', () => {
     attachmentsStoreMock.uploadDocument.mockRejectedValueOnce(new Error('Error al subir el documento'))
     const wrapper = await mountUpload()
     const input = wrapper.find('input[type="file"]')
-    setInputFiles(input, [pdfFile()])
+    setInputFiles(input, [docxFile()])
 
     // Act
     await input.trigger('change')
@@ -243,9 +302,9 @@ describe('AttachmentUpload', () => {
     expect(wrapper.text()).not.toContain('Arrastra tu documento aquí')
   })
 
-  it('navigates to the document editor when the view button is clicked', async () => {
+  it('navigates to the document editor when the attachment is a .docx file', async () => {
     // Arrange
-    const wrapper = await mountUpload({ currentAttachment: pdfAttachment() })
+    const wrapper = await mountUpload({ currentAttachment: docxAttachment() })
     const viewButton = wrapper.find('button[title="Editar documento con IA"]')
 
     // Act
@@ -257,6 +316,19 @@ describe('AttachmentUpload', () => {
       params: { id: 1 },
       query: { entityType: 'project', entityId: '1' },
     })
+  })
+
+  it('blocks navigation with a visible error when the attachment is not a .docx file', async () => {
+    // Arrange: legacy PDF attachment already uploaded, editor is docx-only
+    const wrapper = await mountUpload({ currentAttachment: pdfAttachment() })
+    const viewButton = wrapper.find('button[title="Editar documento con IA"]')
+
+    // Act
+    await viewButton.trigger('click')
+
+    // Assert
+    expect(pushMock).not.toHaveBeenCalled()
+    expect(wrapper.find('div.mt-2.text-red-600').text()).toContain('Solo se admiten archivos .docx')
   })
 
   it('shows the store error message when the download fails', async () => {
@@ -275,11 +347,11 @@ describe('AttachmentUpload', () => {
 
   it('asks for confirmation and replaces the document on confirm', async () => {
     // Arrange
-    const updated = pdfAttachment({ id: 8, file_name: 'nuevo.pdf' })
+    const updated = docxAttachment({ id: 8, file_name: 'nuevo.docx' })
     attachmentsStoreMock.replaceDocument.mockResolvedValueOnce(updated)
-    const wrapper = await mountUpload({ currentAttachment: pdfAttachment() })
+    const wrapper = await mountUpload({ currentAttachment: docxAttachment() })
     const replaceInput = replaceFileInputOf(wrapper)
-    setInputFiles(replaceInput, [pdfFile('nuevo.pdf')])
+    setInputFiles(replaceInput, [docxFile('nuevo.docx')])
 
     // Act: pick a replacement file
     await replaceInput.trigger('change')
@@ -316,11 +388,27 @@ describe('AttachmentUpload', () => {
     expect(attachmentsStoreMock.replaceDocument).not.toHaveBeenCalled()
   })
 
-  it('closes the replacement modal without calling the store on cancel', async () => {
+  it('rejects a PDF replacement file without opening the confirmation modal', async () => {
     // Arrange
-    const wrapper = await mountUpload({ currentAttachment: pdfAttachment() })
+    const wrapper = await mountUpload({ currentAttachment: docxAttachment() })
     const replaceInput = replaceFileInputOf(wrapper)
     setInputFiles(replaceInput, [pdfFile('nuevo.pdf')])
+
+    // Act
+    await replaceInput.trigger('change')
+    await flushPromises()
+
+    // Assert
+    expect(wrapper.find('div.mt-2.text-red-600').text()).toContain('Solo se admiten archivos .docx')
+    expect(document.body.textContent).not.toContain('¿Reemplazar documento existente?')
+    expect(attachmentsStoreMock.replaceDocument).not.toHaveBeenCalled()
+  })
+
+  it('closes the replacement modal without calling the store on cancel', async () => {
+    // Arrange
+    const wrapper = await mountUpload({ currentAttachment: docxAttachment() })
+    const replaceInput = replaceFileInputOf(wrapper)
+    setInputFiles(replaceInput, [docxFile('nuevo.docx')])
     await replaceInput.trigger('change')
     await flushPromises()
     expect(document.body.textContent).toContain('¿Reemplazar documento existente?')
