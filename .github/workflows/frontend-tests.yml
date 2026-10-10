@@ -1,0 +1,58 @@
+# Frontend tests: Vitest layers + Playwright E2E.
+# No secrets, no real backend. E2E runs against the Playwright webServer (npm run dev).
+
+name: frontend-tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  unit:
+    name: unit (vitest + coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Run unit/component/integration tests
+        run: npm run test:unit:run
+
+      - name: Coverage baseline (no thresholds enforced)
+        run: npm run test:coverage
+
+  e2e:
+    name: e2e (playwright chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E (uses webServer from config)
+        run: npm run test:e2e
