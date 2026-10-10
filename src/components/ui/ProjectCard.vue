@@ -38,13 +38,13 @@
       </div>
 
       <!-- Archived mode actions: always visible (not hover-only) -->
-      <div v-if="archived" class="flex items-center gap-2 mt-4">
+      <div v-if="archived" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4">
         <button @click.stop="$emit('restore', project)"
-          class="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
+          class="flex-1 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors duration-200">
           Restaurar
         </button>
         <button @click.stop="$emit('hard-delete', project)"
-          class="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200">
+          class="flex-1 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200">
           Eliminar Definitivamente
         </button>
       </div>
