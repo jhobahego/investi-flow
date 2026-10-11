@@ -37,3 +37,6 @@ coverage/
 
 # Local notes (stale docx-validation doc removed, see project-archiving)
 TODO.md
+
+# Gentle AI local cache
+.atl/
