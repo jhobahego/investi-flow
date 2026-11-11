@@ -74,8 +74,7 @@
             <!-- Bibliography Sidebar -->
             <div v-if="showBibliography"
                 class="w-80 bg-white border-l border-gray-200 flex-shrink-0 shadow-lg z-20 transition-all duration-300 ease-in-out absolute inset-y-0 right-0 sm:relative">
-                <BibliographyPanel :project-id="projectId" :project-info="projectInfo"
-                    :document-context="documentPages.join('\n')" />
+                <BibliographyPanel :project-id="projectId" :project-info="projectInfo" />
             </div>
         </div>
 

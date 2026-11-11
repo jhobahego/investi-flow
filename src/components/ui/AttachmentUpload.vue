@@ -62,6 +62,10 @@
               </span>
               <span>•</span>
               <span>{{ formatFileSize(currentAttachment.file_size) }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" data-testid="indexing-badge"
+                :class="indexingBadge.class" :title="indexingBadge.title">
+                {{ indexingBadge.label }}
+              </span>
             </div>
           </div>
         </div>
@@ -175,6 +179,17 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const INDEXING_BADGES = {
+  pending: { label: 'Pendiente', class: 'bg-gray-100 text-gray-600', title: 'En cola para indexar' },
+  indexing: { label: 'Indexando', class: 'bg-yellow-100 text-yellow-800', title: 'Generando embeddings para la IA' },
+  indexed: { label: 'Indexado', class: 'bg-green-100 text-green-800', title: 'Disponible para la IA' },
+  error: { label: 'Error de indexado', class: 'bg-red-100 text-red-800', title: 'No se pudo indexar el documento' }
+} as const
+
+const indexingBadge = computed(
+  () => INDEXING_BADGES[props.currentAttachment?.indexing_status ?? 'pending']
+)
 
 const emit = defineEmits<{
   'attachment-uploaded': [attachment: AttachmentResponse]

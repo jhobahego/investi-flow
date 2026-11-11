@@ -184,7 +184,6 @@ const props = defineProps<{
   loading?: boolean
   projectId: number
   projectInfo?: SuggestionProjectInfo
-  documentContext?: string
 }>()
 
 const emit = defineEmits<{
@@ -264,8 +263,7 @@ async function handleSearch() {
     const response = await aiService.searchBibliography(props.projectId, {
       query: query,
       max_results: 5,
-      project_context: projectContext,
-      search_context: props.documentContext
+      project_context: projectContext
     })
     searchResults.value = response.sources
   } catch (error: any) {

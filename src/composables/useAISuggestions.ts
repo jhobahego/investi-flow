@@ -69,6 +69,8 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
 
       // Límite máximo para el campo text (el backend acepta hasta 1000)
       const MAX_TEXT_LENGTH = 900
+      // Ventana de contexto del documento que realmente aprovecha el backend
+      const DOCUMENT_WINDOW_LENGTH = 5000
       
       let contextText = ''
       const isAtEnd = cursorPos >= docSize - 2 || cursorPos >= fullContent.length - 10
@@ -101,10 +103,20 @@ export function useAISuggestions(editor: Ref<Editor | undefined>) {
         ? transformBibliography(bibliography) 
         : undefined
 
+      // El backend solo usa ~5.000 chars de este campo (cortando desde el inicio),
+      // así que se envía la ventana que termina en el cursor, no el documento completo.
+      const documentWindow = (
+        editor.value.state.doc.textBetween(
+          Math.max(0, cursorPos - DOCUMENT_WINDOW_LENGTH),
+          cursorPos,
+          '\n'
+        ).trim() || fullContent.slice(-DOCUMENT_WINDOW_LENGTH)
+      )
+
       const requestData: SuggestionRequest = {
         editor_state: {
           text: contextText,
-          full_document_content: fullContent
+          full_document_content: documentWindow
         },
         bibliography: transformedBibliography,
         project_info: projectInfo || undefined,

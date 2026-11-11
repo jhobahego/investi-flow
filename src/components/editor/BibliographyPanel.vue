@@ -57,7 +57,7 @@
     </div>
 
     <AddBibliographyModal :show="showAddModal" :loading="saving" :project-id="projectId" :project-info="projectInfo"
-      :document-context="documentContext" @close="showAddModal = false" @save="handleSave" />
+      @close="showAddModal = false" @save="handleSave" />
 
     <ConfirmDialog :is-open="showDeleteConfirm" title="Eliminar Bibliografía"
       message="¿Estás seguro de que deseas eliminar esta referencia bibliográfica? Esta acción no se puede deshacer."
@@ -77,7 +77,6 @@ import { type SuggestionProjectInfo } from '../../api/aiService'
 const props = defineProps<{
   projectId: number
   projectInfo?: SuggestionProjectInfo
-  documentContext?: string
 }>()
 
 const store = useBibliographyStore()

@@ -165,6 +165,20 @@ describe('AttachmentUpload', () => {
     expect(wrapper.text()).not.toContain('Arrastra tu documento aquí')
   })
 
+  it.each([
+    [undefined, 'Pendiente'],
+    ['pending', 'Pendiente'],
+    ['indexing', 'Indexando'],
+    ['indexed', 'Indexado'],
+    ['error', 'Error de indexado'],
+  ])('shows the indexing badge for status %s as "%s"', async (status, label) => {
+    const wrapper = await mountUpload({
+      currentAttachment: pdfAttachment({ indexing_status: status }),
+    })
+
+    expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe(label)
+  })
+
   it('restricts both file inputs to .docx only', async () => {
     // Arrange & Act
     const wrapper = await mountUpload()
