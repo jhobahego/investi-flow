@@ -189,6 +189,8 @@ export interface TaskUpdate {
 }
 
 // --- ATTACHMENT TYPES ---
+export type IndexingStatus = 'pending' | 'indexing' | 'indexed' | 'error'
+
 export interface AttachmentResponse {
   id: number
   file_name: string
@@ -198,16 +200,26 @@ export interface AttachmentResponse {
   project_id: number | null
   phase_id: number | null
   task_id: number | null
+  indexing_status?: IndexingStatus
   created_at: string
   updated_at: string
 }
 
 // --- CONVERSATION & CHAT TYPES ---
+export interface DocumentSource {
+  attachment_id: number
+  file_name: string
+  chunk_index: number
+  snippet: string
+  similarity: number
+}
+
 export interface ChatMessage {
   id?: number
   role: 'user' | 'model'
   content: string
   model_used?: string | null
+  sources?: DocumentSource[]
   created_at?: string
 }
 
@@ -243,6 +255,7 @@ export interface ChatResponse {
   model_used: string
   conversation_id: number
   message_id: number
+  sources?: DocumentSource[]
 }
 
 // --- ATTACHMENT TYPES ---
@@ -255,6 +268,7 @@ export interface AttachmentResponse {
   project_id: number | null
   phase_id: number | null
   task_id: number | null
+  indexing_status?: IndexingStatus
   created_at: string
   updated_at: string
 }
@@ -359,7 +373,6 @@ export interface BibliographySearchRequest {
   query: string
   max_results?: number
   project_context?: SuggestionProjectInfo
-  search_context?: string
 }
 
 export interface BibliographySource {

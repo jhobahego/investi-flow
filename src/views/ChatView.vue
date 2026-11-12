@@ -114,6 +114,7 @@
                   <p v-if="message.model_used" class="text-xs text-gray-500 mt-2">
                     {{ message.model_used }}
                   </p>
+                  <ChatSources v-if="message.sources?.length" :sources="message.sources" />
                 </div>
               </div>
             </div>
@@ -155,6 +156,7 @@
 </template>
 
 <script setup lang="ts">
+import ChatSources from '@/components/ui/ChatSources.vue'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from '../stores/projects'
@@ -282,7 +284,8 @@ const handleSendMessage = async () => {
       id: response.message_id,
       role: 'model',
       content: response.response,
-      model_used: response.model_used
+      model_used: response.model_used,
+      sources: response.sources ?? []
     })
 
     await nextTick()
