@@ -18,7 +18,7 @@
         'border-primary-400 bg-primary-50': isDragOver,
         'opacity-50 cursor-not-allowed': loading
       }" @drop="handleDrop" @dragover="handleDragOver" @dragenter="handleDragEnter" @dragleave="handleDragLeave">
-      <input ref="fileInput" type="file" class="hidden" accept=".docx" @change="handleFileSelect"
+      <input ref="fileInput" type="file" class="hidden" accept=".docx,.pdf" @change="handleFileSelect"
         :disabled="loading" />
 
       <div v-if="!loading" class="space-y-2">
@@ -31,7 +31,7 @@
             </button>
           </p>
           <p class="text-xs text-gray-500 mt-1">
-            Formatos admitidos: .docx, máximo 10MB
+            Formatos admitidos: .docx, .pdf, máximo 10MB
           </p>
         </div>
       </div>
@@ -106,7 +106,7 @@
     </div>
 
     <!-- Input oculto para reemplazar archivo -->
-    <input ref="replaceFileInput" type="file" class="hidden" accept=".docx" @change="handleReplaceFileSelect"
+    <input ref="replaceFileInput" type="file" class="hidden" accept=".docx,.pdf" @change="handleReplaceFileSelect"
       :disabled="loading" />
 
     <!-- Modal de confirmación personalizado para reemplazar documento -->
@@ -153,6 +153,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectsStore } from '../../stores/projects'
 import { useAttachmentsStore } from '../../stores/attachments'
+import { useIndexingStatusPolling } from '../../composables/useIndexingStatusPolling'
 import type { AttachmentResponse } from '../../types'
 import {
   validateFile,
@@ -187,10 +188,6 @@ const INDEXING_BADGES = {
   error: { label: 'Error de indexado', class: 'bg-red-100 text-red-800', title: 'No se pudo indexar el documento' }
 } as const
 
-const indexingBadge = computed(
-  () => INDEXING_BADGES[props.currentAttachment?.indexing_status ?? 'pending']
-)
-
 const emit = defineEmits<{
   'attachment-uploaded': [attachment: AttachmentResponse]
   'attachment-updated': [attachment: AttachmentResponse]
@@ -199,6 +196,20 @@ const emit = defineEmits<{
 const router = useRouter()
 const projectsStore = useProjectsStore()
 const attachmentsStore = useAttachmentsStore()
+
+const { currentStatus: polledIndexingStatus } = useIndexingStatusPolling({
+  entityType: () => props.entityType,
+  entityId: () => props.entityId,
+  attachment: () => props.currentAttachment,
+  refresh: (entityType, entityId) => attachmentsStore.refreshDocument(entityType, entityId),
+  onStatusChange: (updatedAttachment) => {
+    emit('attachment-updated', updatedAttachment)
+  }
+})
+
+const indexingBadge = computed(
+  () => INDEXING_BADGES[polledIndexingStatus.value ?? props.currentAttachment?.indexing_status ?? 'pending']
+)
 
 // Referencias
 const fileInput = ref<HTMLInputElement>()

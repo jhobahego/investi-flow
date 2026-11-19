@@ -805,23 +805,25 @@ const handleMoveTaskToPhase = async ({ taskId, newPhaseId }: { taskId: number, n
 }
 
 // Funciones para adjuntos
-const handleProjectDocumentUploaded = (attachment: AttachmentResponse) => {
+const syncProjectDocument = (attachment: AttachmentResponse) => {
   projectDocument.value = attachment
+  const projectId = attachment.project_id ?? projectsStore.currentProject?.id
+  if (projectId != null) {
+    attachmentsStore.setCachedDocument('project', projectId, attachment)
+  }
 }
 
-const handleProjectDocumentUpdated = (attachment: AttachmentResponse) => {
-  projectDocument.value = attachment
+const syncTaskDocument = (attachment: AttachmentResponse) => {
+  const taskId = attachment.task_id ?? selectedTask.value?.id
+  if (taskId != null) {
+    attachmentsStore.setCachedDocument('task', taskId, attachment)
+  }
 }
 
-const handleTaskDocumentUploaded = (attachment: AttachmentResponse) => {
-  // La tarea se actualiza automáticamente a través del store
-  console.log('Documento de tarea subido:', attachment)
-}
-
-const handleTaskDocumentUpdated = (attachment: AttachmentResponse) => {
-  // La tarea se actualiza automáticamente a través del store
-  console.log('Documento de tarea actualizado:', attachment)
-}
+const handleProjectDocumentUploaded = syncProjectDocument
+const handleProjectDocumentUpdated = syncProjectDocument
+const handleTaskDocumentUploaded = syncTaskDocument
+const handleTaskDocumentUpdated = syncTaskDocument
 
 const getTaskDocument = (taskId: number): AttachmentResponse | null => {
   return attachmentsStore.getCachedDocument('task', taskId) || null

@@ -12,6 +12,7 @@ const { pushMock, attachmentsStoreMock, projectsStoreMock } = vi.hoisted(() => (
     replaceDocument: vi.fn(),
     downloadDocument: vi.fn(),
     getDocument: vi.fn(),
+    refreshDocument: vi.fn(),
     clearError: vi.fn(),
   },
   projectsStoreMock: {
@@ -115,6 +116,7 @@ describe('AttachmentUpload', () => {
     attachmentsStoreMock.downloadDocument.mockReset()
     attachmentsStoreMock.clearError.mockReset()
     attachmentsStoreMock.getDocument.mockReset().mockResolvedValue(null)
+    attachmentsStoreMock.refreshDocument.mockReset().mockResolvedValue(null)
   })
 
   afterEach(() => {
@@ -179,24 +181,24 @@ describe('AttachmentUpload', () => {
     expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe(label)
   })
 
-  it('restricts both file inputs to .docx only', async () => {
+  it('restricts both file inputs to .docx and .pdf', async () => {
     // Arrange & Act
     const wrapper = await mountUpload()
 
-    // Assert: upload input + replace input (always rendered) are docx-only
+    // Assert: upload input + replace input (always rendered) allow docx and pdf
     const inputs = wrapper.findAll('input[type="file"]')
     expect(inputs).toHaveLength(2)
     for (const input of inputs) {
-      expect(input.attributes('accept')).toBe('.docx')
+      expect(input.attributes('accept')).toBe('.docx,.pdf')
     }
   })
 
-  it('tells the user that only .docx files up to 10MB are supported', async () => {
+  it('tells the user that .docx and .pdf files up to 10MB are supported', async () => {
     // Arrange & Act
     const wrapper = await mountUpload()
 
     // Assert
-    expect(wrapper.text()).toContain('Formatos admitidos: .docx')
+    expect(wrapper.text()).toContain('Formatos admitidos: .docx, .pdf')
     expect(wrapper.text()).toContain('10MB')
   })
 
@@ -237,8 +239,10 @@ describe('AttachmentUpload', () => {
     expect(wrapper.emitted('attachment-uploaded')).toHaveLength(1)
   })
 
-  it('rejects a PDF selected via the file input with a visible error and no upload', async () => {
-    // Arrange: backend is docx-only, so PDFs are rejected early
+  it('uploads a valid PDF file selected via the file input and emits attachment-uploaded', async () => {
+    // Arrange: backend extracts and indexes PDFs for RAG
+    const uploaded = pdfAttachment()
+    attachmentsStoreMock.uploadDocument.mockResolvedValueOnce(uploaded)
     const wrapper = await mountUpload()
     const input = wrapper.find('input[type="file"]')
     setInputFiles(input, [pdfFile()])
@@ -248,9 +252,13 @@ describe('AttachmentUpload', () => {
     await flushPromises()
 
     // Assert
-    expect(attachmentsStoreMock.uploadDocument).not.toHaveBeenCalled()
-    expect(wrapper.emitted('attachment-uploaded')).toBeUndefined()
-    expect(wrapper.find('div.mt-2.text-red-600').text()).toContain('Solo se admiten archivos .docx')
+    expect(attachmentsStoreMock.uploadDocument).toHaveBeenCalledTimes(1)
+    const [entityType, entityId, file] = attachmentsStoreMock.uploadDocument.mock.calls[0]
+    expect(entityType).toBe('project')
+    expect(entityId).toBe(1)
+    expect((file as File).name).toBe('informe.pdf')
+    expect(wrapper.emitted('attachment-uploaded')).toHaveLength(1)
+    expect(wrapper.emitted('attachment-uploaded')![0]).toEqual([uploaded])
   })
 
   it('shows a visible validation error and skips upload for a disallowed file type', async () => {
@@ -402,8 +410,10 @@ describe('AttachmentUpload', () => {
     expect(attachmentsStoreMock.replaceDocument).not.toHaveBeenCalled()
   })
 
-  it('rejects a PDF replacement file without opening the confirmation modal', async () => {
+  it('asks for confirmation and replaces with a PDF file on confirm', async () => {
     // Arrange
+    const updated = pdfAttachment({ id: 9, file_name: 'nuevo.pdf' })
+    attachmentsStoreMock.replaceDocument.mockResolvedValueOnce(updated)
     const wrapper = await mountUpload({ currentAttachment: docxAttachment() })
     const replaceInput = replaceFileInputOf(wrapper)
     setInputFiles(replaceInput, [pdfFile('nuevo.pdf')])
@@ -412,10 +422,18 @@ describe('AttachmentUpload', () => {
     await replaceInput.trigger('change')
     await flushPromises()
 
-    // Assert
-    expect(wrapper.find('div.mt-2.text-red-600').text()).toContain('Solo se admiten archivos .docx')
-    expect(document.body.textContent).not.toContain('¿Reemplazar documento existente?')
+    // Assert: confirmation modal opens
+    expect(document.body.textContent).toContain('¿Reemplazar documento existente?')
     expect(attachmentsStoreMock.replaceDocument).not.toHaveBeenCalled()
+
+    // Act: confirm
+    modalButton('Reemplazar').click()
+    await flushPromises()
+
+    // Assert
+    expect(attachmentsStoreMock.replaceDocument).toHaveBeenCalledTimes(1)
+    expect(wrapper.emitted('attachment-updated')).toHaveLength(1)
+    expect(wrapper.emitted('attachment-updated')![0]).toEqual([updated])
   })
 
   it('closes the replacement modal without calling the store on cancel', async () => {
@@ -435,5 +453,126 @@ describe('AttachmentUpload', () => {
     expect(attachmentsStoreMock.replaceDocument).not.toHaveBeenCalled()
     expect(wrapper.emitted('attachment-updated')).toBeUndefined()
     expect(document.body.textContent).not.toContain('¿Reemplazar documento existente?')
+  })
+
+  describe('live indexing status polling', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('polls every 2s for pending -> indexing -> indexed, updates badge, emits attachment-updated, and stops', async () => {
+      const pending = docxAttachment({ id: 7, indexing_status: 'pending' })
+      const indexing = docxAttachment({ id: 7, indexing_status: 'indexing' })
+      const indexed = docxAttachment({ id: 7, indexing_status: 'indexed' })
+
+      attachmentsStoreMock.refreshDocument
+        .mockResolvedValueOnce(indexing)
+        .mockResolvedValueOnce(indexed)
+
+      const wrapper = await mountUpload({ currentAttachment: pending })
+      expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe('Pendiente')
+
+      await vi.advanceTimersByTimeAsync(2000)
+      await flushPromises()
+
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledWith('project', 1)
+      expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe('Indexando')
+      expect(wrapper.emitted('attachment-updated')).toHaveLength(1)
+      expect(wrapper.emitted('attachment-updated')![0]).toEqual([indexing])
+
+      await vi.advanceTimersByTimeAsync(2000)
+      await flushPromises()
+
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(2)
+      expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe('Indexado')
+      expect(wrapper.emitted('attachment-updated')).toHaveLength(2)
+      expect(wrapper.emitted('attachment-updated')![1]).toEqual([indexed])
+
+      await vi.advanceTimersByTimeAsync(10_000)
+      await flushPromises()
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(2)
+    })
+
+    it('stops polling when refreshDocument transitions to error', async () => {
+      const pending = docxAttachment({ id: 7, indexing_status: 'pending' })
+      const errored = docxAttachment({ id: 7, indexing_status: 'error' })
+
+      attachmentsStoreMock.refreshDocument.mockResolvedValueOnce(errored)
+
+      const wrapper = await mountUpload({ currentAttachment: pending })
+
+      await vi.advanceTimersByTimeAsync(2000)
+      await flushPromises()
+
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+      expect(wrapper.find('[data-testid="indexing-badge"]').text()).toBe('Error de indexado')
+      expect(wrapper.emitted('attachment-updated')).toHaveLength(1)
+      expect(wrapper.emitted('attachment-updated')![0]).toEqual([errored])
+
+      await vi.advanceTimersByTimeAsync(10_000)
+      await flushPromises()
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+    })
+
+    it('clears the polling timer on unmount', async () => {
+      const pending = docxAttachment({ id: 7, indexing_status: 'pending' })
+      attachmentsStoreMock.refreshDocument.mockResolvedValue(pending)
+
+      const wrapper = await mountUpload({ currentAttachment: pending })
+
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+
+      wrapper.unmount()
+
+      await vi.advanceTimersByTimeAsync(10_000)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not send overlapping refreshDocument requests while one is still pending', async () => {
+      const pending = docxAttachment({ id: 7, indexing_status: 'pending' })
+      let resolveRefresh!: (value: AttachmentResponse | null) => void
+      attachmentsStoreMock.refreshDocument.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve
+          }),
+      )
+
+      await mountUpload({ currentAttachment: pending })
+
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+
+      resolveRefresh(docxAttachment({ id: 7, indexing_status: 'indexed' }))
+      await flushPromises()
+
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(1)
+    })
+
+    it('stops polling after 60s when status remains pending', async () => {
+      const pending = docxAttachment({ id: 7, indexing_status: 'pending' })
+      attachmentsStoreMock.refreshDocument.mockResolvedValue(pending)
+
+      await mountUpload({ currentAttachment: pending })
+
+      await vi.advanceTimersByTimeAsync(60_000)
+      await flushPromises()
+      const callsAtStop = attachmentsStoreMock.refreshDocument.mock.calls.length
+      expect(callsAtStop).toBeGreaterThan(0)
+
+      await vi.advanceTimersByTimeAsync(20_000)
+      await flushPromises()
+      expect(attachmentsStoreMock.refreshDocument).toHaveBeenCalledTimes(callsAtStop)
+    })
   })
 })

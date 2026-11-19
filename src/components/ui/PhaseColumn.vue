@@ -169,8 +169,7 @@ const openAttachmentModal = () => {
 }
 
 const handlePhaseAttachmentChange = (attachment: AttachmentResponse) => {
-  // La actualización se maneja automáticamente a través del store
-  console.log('Documento de fase actualizado:', attachment)
+  attachmentsStore.setCachedDocument('phase', props.phase.id, attachment)
 }
 
 const confirmDelete = () => {

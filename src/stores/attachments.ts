@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import apiClient, { ApiValidationError } from '../api/client'
 import type { ApiError, AttachmentResponse } from '../types'
 
+export type AttachmentEntityType = 'project' | 'phase' | 'task'
+
 export const useAttachmentsStore = defineStore('attachments', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -15,12 +17,23 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     error.value = null
   }
 
-  function getCacheKey(entityType: 'project' | 'phase' | 'task', entityId: number): string {
+  function getCacheKey(entityType: AttachmentEntityType, entityId: number): string {
     return `${entityType}-${entityId}`
   }
 
+  function getDocumentEndpoint(entityType: AttachmentEntityType, entityId: number): string {
+    switch (entityType) {
+      case 'project':
+        return `/proyectos/${entityId}/documentos`
+      case 'phase':
+        return `/fases/${entityId}/documentos`
+      case 'task':
+        return `/tareas/${entityId}/documentos`
+    }
+  }
+
   async function uploadDocument(
-    entityType: 'project' | 'phase' | 'task',
+    entityType: AttachmentEntityType,
     entityId: number,
     file: File
   ): Promise<AttachmentResponse> {
@@ -31,18 +44,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
       const formData = new FormData()
       formData.append('file', file)
 
-      let endpoint = ''
-      switch (entityType) {
-        case 'project':
-          endpoint = `/proyectos/${entityId}/documentos`
-          break
-        case 'phase':
-          endpoint = `/fases/${entityId}/documentos`
-          break
-        case 'task':
-          endpoint = `/tareas/${entityId}/documentos`
-          break
-      }
+      const endpoint = getDocumentEndpoint(entityType, entityId)
 
       const { data } = await apiClient.post<AttachmentResponse>(
         endpoint,
@@ -74,7 +76,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
   }
 
   async function replaceDocument(
-    entityType: 'project' | 'phase' | 'task',
+    entityType: AttachmentEntityType,
     entityId: number,
     file: File
   ): Promise<AttachmentResponse> {
@@ -85,18 +87,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
       const formData = new FormData()
       formData.append('file', file)
 
-      let endpoint = ''
-      switch (entityType) {
-        case 'project':
-          endpoint = `/proyectos/${entityId}/documentos`
-          break
-        case 'phase':
-          endpoint = `/fases/${entityId}/documentos`
-          break
-        case 'task':
-          endpoint = `/tareas/${entityId}/documentos`
-          break
-      }
+      const endpoint = getDocumentEndpoint(entityType, entityId)
 
       const { data } = await apiClient.put<AttachmentResponse>(
         endpoint,
@@ -129,7 +120,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
 
 
   async function getDocument(
-    entityType: 'project' | 'phase' | 'task',
+    entityType: AttachmentEntityType,
     entityId: number
   ): Promise<AttachmentResponse | null> {
     const cacheKey = getCacheKey(entityType, entityId)
@@ -143,18 +134,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     error.value = null
     
     try {
-      let endpoint = ''
-      switch (entityType) {
-        case 'project':
-          endpoint = `/proyectos/${entityId}/documentos`
-          break
-        case 'phase':
-          endpoint = `/fases/${entityId}/documentos`
-          break
-        case 'task':
-          endpoint = `/tareas/${entityId}/documentos`
-          break
-      }
+      const endpoint = getDocumentEndpoint(entityType, entityId)
 
       const { data } = await apiClient.get<AttachmentResponse | null>(endpoint)
       
@@ -177,7 +157,46 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     }
   }
 
-  function clearCache(entityType?: 'project' | 'phase' | 'task', entityId?: number) {
+  /**
+   * Refresca silenciosamente el documento desde la API sin activar loading
+   * y sin sobrescribir la cache si la respuesta es null o 404.
+   */
+  async function refreshDocument(
+    entityType: AttachmentEntityType,
+    entityId: number
+  ): Promise<AttachmentResponse | null> {
+    const cacheKey = getCacheKey(entityType, entityId)
+
+    try {
+      const endpoint = getDocumentEndpoint(entityType, entityId)
+      const { data } = await apiClient.get<AttachmentResponse | null>(endpoint)
+
+      if (data !== null && data !== undefined) {
+        attachments.value[cacheKey] = data
+        return data
+      }
+
+      return null
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        return null
+      }
+
+      console.error(`Failed to refresh document for ${entityType} ${entityId}:`, err)
+      throw err
+    }
+  }
+
+  function setCachedDocument(
+    entityType: AttachmentEntityType,
+    entityId: number,
+    attachment: AttachmentResponse | null
+  ) {
+    const cacheKey = getCacheKey(entityType, entityId)
+    attachments.value[cacheKey] = attachment
+  }
+
+  function clearCache(entityType?: AttachmentEntityType, entityId?: number) {
     if (entityType && entityId) {
       const cacheKey = getCacheKey(entityType, entityId)
       delete attachments.value[cacheKey]
@@ -186,7 +205,7 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     }
   }
 
-  function getCachedDocument(entityType: 'project' | 'phase' | 'task', entityId: number): AttachmentResponse | null | undefined {
+  function getCachedDocument(entityType: AttachmentEntityType, entityId: number): AttachmentResponse | null | undefined {
     const cacheKey = getCacheKey(entityType, entityId)
     return attachments.value[cacheKey]
   }
@@ -264,6 +283,8 @@ export const useAttachmentsStore = defineStore('attachments', () => {
     uploadDocument,
     replaceDocument,
     getDocument,
+    refreshDocument,
+    setCachedDocument,
     downloadDocument,
     clearCache,
     getCachedDocument

@@ -4,13 +4,15 @@ import { FileType } from '../types'
 export const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 // Tipos de archivo permitidos.
-// Upload is docx-only: the backend is the source of truth (extraction/editing
-// endpoints reject non-.docx). Allowed lists stay centralized here so a future
-// PDF->viewer / DOCX->editor split only touches these constants.
-export const ALLOWED_FILE_TYPES = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+// Upload accepts both .docx and .pdf (backend extracts and indexes both for RAG),
+// while the TipTap editor remains .docx-only.
+export const ALLOWED_FILE_TYPES = [
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/pdf'
+]
 
 // Extensiones permitidas
-export const ALLOWED_EXTENSIONS = ['.docx']
+export const ALLOWED_EXTENSIONS = ['.docx', '.pdf']
 
 /**
  * Valida si un archivo es válido según tipo y tamaño
@@ -28,7 +30,7 @@ export function validateFile(file: File): { isValid: boolean; error?: string } {
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return {
       isValid: false,
-      error: 'Tipo de archivo no permitido. Solo se admiten archivos .docx para edición en el editor'
+      error: 'Tipo de archivo no permitido. Solo se admiten archivos .docx y .pdf'
     }
   }
 
@@ -37,7 +39,7 @@ export function validateFile(file: File): { isValid: boolean; error?: string } {
   if (!ALLOWED_EXTENSIONS.includes(extension)) {
     return {
       isValid: false,
-      error: 'Extensión de archivo no permitida. Solo se admiten archivos .docx para edición en el editor'
+      error: 'Extensión de archivo no permitida. Solo se admiten archivos .docx y .pdf'
     }
   }
 

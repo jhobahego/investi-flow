@@ -351,7 +351,7 @@ describe('getDownloadUrl', () => {
 })
 
 describe('validateFile', () => {
-  it('rejects a PDF file: only DOCX is allowed for the editor', () => {
+  it('accepts a valid PDF file', () => {
     // Arrange
     const file = new File(['content'], 'report.pdf', { type: 'application/pdf' })
 
@@ -359,8 +359,18 @@ describe('validateFile', () => {
     const result = validateFile(file)
 
     // Assert
-    expect(result.isValid).toBe(false)
-    expect(result.error).toContain('Solo se admiten archivos .docx')
+    expect(result).toEqual({ isValid: true })
+  })
+
+  it('accepts an uppercase PDF extension with an allowed MIME type', () => {
+    // Arrange
+    const file = new File(['content'], 'REPORT.PDF', { type: 'application/pdf' })
+
+    // Act
+    const result = validateFile(file)
+
+    // Assert
+    expect(result).toEqual({ isValid: true })
   })
 
   it('accepts a valid DOCX file', () => {
@@ -453,7 +463,8 @@ describe('validateFile', () => {
     expect(max).toBe(expectedMax)
     expect(ALLOWED_FILE_TYPES).toEqual([
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/pdf',
     ])
-    expect(ALLOWED_EXTENSIONS).toEqual(['.docx'])
+    expect(ALLOWED_EXTENSIONS).toEqual(['.docx', '.pdf'])
   })
 })
