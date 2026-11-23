@@ -110,11 +110,22 @@
               <div v-else class="flex items-start mb-4 space-x-2 sm:space-x-3">
                 <LexiAvatar :show-name="false" class="mt-1 flex-shrink-0" />
                 <div class="max-w-[85%] sm:max-w-[70%] bg-gray-100 text-gray-900 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
-                  <div class="text-sm markdown-content" v-dompurify-html="renderMarkdown(message.content)"></div>
+                  <ChatMessageContent
+                    :content="message.content"
+                    :sources="message.sources"
+                    :active-source-index="getHighlightedSourceIndex(index)"
+                    @select-source="handleSelectSource(index, $event)"
+                  />
                   <p v-if="message.model_used" class="text-xs text-gray-500 mt-2">
                     {{ message.model_used }}
                   </p>
-                  <ChatSources v-if="message.sources?.length" :sources="message.sources" />
+                  <ChatSources
+                    v-if="message.sources?.length"
+                    :sources="message.sources"
+                    :highlighted-index="getHighlightedSourceIndex(index)"
+                    :highlight-trigger="getHighlightTrigger(index)"
+                    @clear-highlight="handleClearHighlight(index)"
+                  />
                 </div>
               </div>
             </div>
@@ -156,6 +167,7 @@
 </template>
 
 <script setup lang="ts">
+import ChatMessageContent from '@/components/ui/ChatMessageContent.vue'
 import ChatSources from '@/components/ui/ChatSources.vue'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -175,17 +187,10 @@ import {
   PaperAirplaneIcon
 } from '@heroicons/vue/24/outline'
 import type { ChatMessage, ConversationListItem } from '../types'
-import { marked } from 'marked'
 
-// Configurar marked para opciones de seguridad
-marked.setOptions({
-  breaks: true, // Convertir saltos de línea en <br>
-  gfm: true, // GitHub Flavored Markdown
-})
-
-// Función para convertir Markdown a HTML
-const renderMarkdown = (content: string): string => {
-  return marked.parse(content) as string
+interface HighlightedSourceState {
+  index: number
+  trigger: number
 }
 
 const route = useRoute()
@@ -202,6 +207,7 @@ const showSidebar = ref(true)
 const currentConversationId = ref<number | null>(null)
 const messagesContainer = ref<HTMLElement | null>(null)
 const loadingConversations = ref(false)
+const highlightedSources = ref<Record<number, HighlightedSourceState>>({})
 
 // Estado para modal de confirmación
 const confirmDialogOpen = ref(false)
@@ -215,6 +221,31 @@ const projectId = computed(() => Number(route.params.id))
 const projectName = computed(() => projectsStore.currentProject?.name || 'Proyecto')
 
 // Funciones
+const getHighlightedSourceIndex = (messageIndex: number): number | null => {
+  return highlightedSources.value[messageIndex]?.index ?? null
+}
+
+const getHighlightTrigger = (messageIndex: number): number => {
+  return highlightedSources.value[messageIndex]?.trigger ?? 0
+}
+
+const handleSelectSource = (messageIndex: number, sourceIndex: number) => {
+  const currentTrigger = highlightedSources.value[messageIndex]?.trigger ?? 0
+  highlightedSources.value = {
+    ...highlightedSources.value,
+    [messageIndex]: {
+      index: sourceIndex,
+      trigger: currentTrigger + 1
+    }
+  }
+}
+
+const handleClearHighlight = (messageIndex: number) => {
+  const next = { ...highlightedSources.value }
+  delete next[messageIndex]
+  highlightedSources.value = next
+}
+
 const handleGoBack = () => {
   router.push(`/project/${projectId.value}`)
 }
@@ -233,6 +264,7 @@ const loadConversations = async () => {
 const selectConversation = async (conversationId: number) => {
   try {
     const conversation = await chatService.getConversation(projectId.value, conversationId)
+    highlightedSources.value = {}
     messages.value = conversation.messages
     currentConversationId.value = conversationId
     await nextTick()
@@ -244,6 +276,7 @@ const selectConversation = async (conversationId: number) => {
 }
 
 const startNewConversation = () => {
+  highlightedSources.value = {}
   messages.value = []
   currentConversationId.value = null
   currentMessage.value = ''
@@ -369,151 +402,3 @@ watch(() => messages.value.length, () => {
   nextTick(() => scrollToBottom())
 })
 </script>
-
-<style scoped>
-/* Estilos para contenido Markdown renderizado */
-.markdown-content {
-  line-height: 1.6;
-}
-
-.markdown-content :deep(h1),
-.markdown-content :deep(h2),
-.markdown-content :deep(h3),
-.markdown-content :deep(h4),
-.markdown-content :deep(h5),
-.markdown-content :deep(h6) {
-  font-weight: 600;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-  line-height: 1.3;
-}
-
-.markdown-content :deep(h1) {
-  font-size: 1.5em;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.3em;
-}
-
-.markdown-content :deep(h2) {
-  font-size: 1.3em;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.3em;
-}
-
-.markdown-content :deep(h3) {
-  font-size: 1.15em;
-}
-
-.markdown-content :deep(h4) {
-  font-size: 1em;
-}
-
-.markdown-content :deep(p) {
-  margin-bottom: 0.75em;
-}
-
-.markdown-content :deep(ul),
-.markdown-content :deep(ol) {
-  margin-bottom: 0.75em;
-  padding-left: 1.5em;
-}
-
-.markdown-content :deep(ul) {
-  list-style-type: disc;
-  list-style-position: outside;
-}
-
-.markdown-content :deep(ol) {
-  list-style-type: decimal;
-  list-style-position: outside;
-}
-
-.markdown-content :deep(ul ul) {
-  list-style-type: circle;
-}
-
-.markdown-content :deep(ul ul ul) {
-  list-style-type: square;
-}
-
-.markdown-content :deep(li) {
-  margin-bottom: 0.25em;
-  display: list-item;
-}
-
-.markdown-content :deep(code) {
-  background-color: rgba(0, 0, 0, 0.05);
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-  font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 0.9em;
-}
-
-.markdown-content :deep(pre) {
-  background-color: #f6f8fa;
-  border-radius: 6px;
-  padding: 1em;
-  overflow-x: auto;
-  margin-bottom: 0.75em;
-}
-
-.markdown-content :deep(pre code) {
-  background-color: transparent;
-  padding: 0;
-}
-
-.markdown-content :deep(blockquote) {
-  border-left: 4px solid #d1d5db;
-  padding-left: 1em;
-  margin-left: 0;
-  color: #6b7280;
-  font-style: italic;
-}
-
-.markdown-content :deep(a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-
-.markdown-content :deep(a:hover) {
-  color: #2563eb;
-}
-
-.markdown-content :deep(strong) {
-  font-weight: 600;
-}
-
-.markdown-content :deep(em) {
-  font-style: italic;
-}
-
-.markdown-content :deep(hr) {
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 1.5em 0;
-}
-
-.markdown-content :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin-bottom: 0.75em;
-}
-
-.markdown-content :deep(th),
-.markdown-content :deep(td) {
-  border: 1px solid #d1d5db;
-  padding: 0.5em;
-  text-align: left;
-}
-
-.markdown-content :deep(th) {
-  background-color: #f3f4f6;
-  font-weight: 600;
-}
-
-.markdown-content :deep(img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-}
-</style>
